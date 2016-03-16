@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="./stylesheets/d3.parcoords.css">
+        <link rel="stylesheet" href="./stylesheets/style.css">
+        <script src="./javascripts/lib/d3.min.js"></script>
+        <script src="./javascripts/lib/d3.parcoords.js"></script>
+        <script src="./javascripts/glutil.js"></script>
+        <script src="./javascripts/script.js"></script>
+    </head>
+    <body>
+        <div id="container"></div>
+        <div id="ui_layer" class="visible">
+            <h2>webgl parcoord</h2>
+            <p><input type="file" id="file"><label for="file">(*.csv)</label></p>
+            <p><input type="checkbox" id="density"><label for="density" title="密度ベースレンダリング"> density </label></p>
+            <p><input type="checkbox" id="densityNormal" checked><label for="densityNormal" title="選択中のラインのみで密度を正規化して着色"> density normalize </label></p>
+            <hr>
+            <h2>line color</h2>
+            <div class="paragraphs">
+                <span class="labels">lines</span>
+                <div class="html5lp"><input id="lineColor1" class="html5jp-cpick [coloring:true]" type="text" value="#FFFFFF"></div>
+            </div>
+            <div class="paragraphs">
+                <span class="labels">selected</span>
+                <div class="html5lp"><input id="lineColor2" class="html5jp-cpick [coloring:true]" type="text" value="#CCCCCC"></div>
+            </div>
+            <hr>
+            <h2>density color</h2>
+            <div class="paragraphs">
+                <span class="labels">high</span>
+                <div class="html5lp"><input id="fgColor5" class="html5jp-cpick [coloring:true]" type="text" value="#111111"></div>
+            </div>
+            <div class="paragraphs">
+                <span class="labels"></span>
+                <div class="html5lp"><input id="fgColor4" class="html5jp-cpick [coloring:true]" type="text" value="#444444"></div>
+            </div>
+            <div class="paragraphs">
+                <span class="labels">medium</span>
+                <div class="html5lp"><input id="fgColor3" class="html5jp-cpick [coloring:true]" type="text" value="#888888"></div>
+            </div>
+            <div class="paragraphs">
+                <span class="labels"></span>
+                <div class="html5lp"><input id="fgColor2" class="html5jp-cpick [coloring:true]" type="text" value="#CCCCCC"></div>
+            </div>
+            <div class="paragraphs">
+                <span class="labels">low</span>
+                <div class="html5lp"><input id="fgColor1" class="html5jp-cpick [coloring:true]" type="text" value="#FFFFFF"></div>
+            </div>
+            <hr>
+            <h2>selected density color</h2>
+            <div class="paragraphs">
+                <span class="labels">high</span>
+                <div class="html5lp"><input id="brColor5" class="html5jp-cpick [coloring:true]" type="text" value="#111111"></div>
+            </div>
+            <div class="paragraphs">
+                <span class="labels"></span>
+                <div class="html5lp"><input id="brColor4" class="html5jp-cpick [coloring:true]" type="text" value="#444444"></div>
+            </div>
+            <div class="paragraphs">
+                <span class="labels">medium</span>
+                <div class="html5lp"><input id="brColor3" class="html5jp-cpick [coloring:true]" type="text" value="#888888"></div>
+            </div>
+            <div class="paragraphs">
+                <span class="labels"></span>
+                <div class="html5lp"><input id="brColor2" class="html5jp-cpick [coloring:true]" type="text" value="#CCCCCC"></div>
+            </div>
+            <div class="paragraphs">
+                <span class="labels">low</span>
+                <div class="html5lp"><input id="brColor1" class="html5jp-cpick [coloring:true]" type="text" value="#FFFFFF"></div>
+            </div>
+        </div>
+    </body>
+</html>
