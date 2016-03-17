@@ -12,13 +12,15 @@
     var weight = [];
 
     // other private variable
-    var csvData = null;
+    var targetData = null;
     var density = true;
     var colormap = null;
 
     // window size
     var canvasAreaWidth = 1000;
     var canvasAreaHeight = 700;
+
+    var sph = new SPHLoader();
 
     window.addEventListener('load', function(){
         var prev = {prevType: null, glforeground: null, glbrush: null};
@@ -52,12 +54,15 @@
 
         function fileUpload(eve){
             var file = eve.target.files[0];
-            if(!file.type.match(/text/)){
-                return;
-            }
             var reader = new FileReader();
             reader.onload = function(eve) {
-                csvData = convertCSV(eve.target.result);
+                var data = eve.target.result;
+                var p = sph.isSPH(data);
+                if(p.type){
+                    targetData = sph.parse(data);
+                }else{
+                    targetData = convertCSV(eve.target.result);
+                }
                 useAxes();
                 setTimeout(function(){
                     var e = document.createElement('script');
@@ -115,9 +120,9 @@
         function useAxes(){
             var i, j, k, l;
             param();
-            if(csvData == null){return;}
+            if(targetData == null){return;}
 
-            beginDraw(csvData);
+            beginDraw(targetData);
             function beginDraw(data){
                 if(data.length < 3){console.log('invalid data:' + data); return;}
                 dimensionTitles = {};
