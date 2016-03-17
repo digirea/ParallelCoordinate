@@ -17,7 +17,7 @@
     var colormap = null;
 
     // window size
-    var canvasAreaWidth = 1000;
+    var canvasAreaWidth = 1200;
     var canvasAreaHeight = 700;
 
     var sph = new SPHLoader();
@@ -48,8 +48,8 @@
         function windowResize(eve){
             var tw = window.innerWidth;
             var th = window.innerHeight;
-            canvasAreaWidth = tw * 0.85;
-            canvasAreaHeight = th * 0.7;
+            canvasAreaWidth = Math.min(canvasAreaWidth, tw * 0.85);
+            canvasAreaHeight = Math.min(canvasAreaHeight, th * 0.7);
         }
 
         function fileUpload(eve){
@@ -61,9 +61,10 @@
                 if(b){
                     reader.onload = function(eve){
                         var data = eve.target.result;
-                        var b = sph.isSPH(data);
-                        if(b){
-                            targetData = sph.parse(data);
+                        var param = sph.isSPH(data);
+                        if(param){
+                            targetData = convertSPH(sph.parse(data, param));
+                            begin();
                         }else{
                             console.log('invalid file!');
                             return;
@@ -72,15 +73,18 @@
                     reader.readAsArrayBuffer(file);
                 }else{
                     targetData = convertCSV(data);
+                    begin();
                 }
+            };
+            reader.readAsBinaryString(file);
+            function begin(){
                 useAxes();
                 setTimeout(function(){
                     var e = document.createElement('script');
                     document.body.appendChild(e);
                     e.src = './javascripts/lib/cpick.js';
-                }, 200);
-            };
-            reader.readAsBinaryString(file);
+                }, 100);
+            }
         }
 
         function redraw(){
@@ -92,6 +96,21 @@
             }
         }
         global.redrawing = redraw;
+
+        function convertSPH(data){
+            var dest = [];
+            var a, i, j, k;
+            for(i = 0, j = data.length; i < j; i += 3){
+                a = [
+                    data[i],
+                    data[i + 1],
+                    data[i + 2],
+                    0.0
+                ];
+                dest.push(a);
+            }
+            return dest;
+        }
 
         function convertCSV(data){
             var header, temp, dest, rowcell;

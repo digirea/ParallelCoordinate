@@ -47,6 +47,7 @@ SPHLoader.prototype.isSPH = function(data){
         k[j[l]] = dv.getUint32(l * 4, en);
     }
     k.nowOffset = (j.length + 2) * 4;
+    k.endian = en;
 
     // check values
     if(k.imax > 300 || k.jmax > 300 || k.kmax > 300){
@@ -64,7 +65,22 @@ SPHLoader.prototype.isSPH = function(data){
 };
 
 SPHLoader.prototype.parse = function(data, param){
-    
+    if(data == null || param == null){return;}
+    var dest = [];
+    var x, y, z, e, tx, ty, tz, te, f, i;
+    var dv = new DataView(data, param.nowOffset);
+    f = param.endian; i = 0;
+    for(z = 0, tz = param.kmax; z < tz; ++z){
+        for(y = 0, ty = param.jmax; y < ty; ++y){
+            for(x = 0, tx = param.imax; x < tx; ++x){
+                for(e = 0, te = param.component; e < te; ++e){
+                    dest.push(dv.getFloat32(i * 4, f));
+                    ++i;
+                }
+            }
+        }
+    }
+    return dest;
 };
 
 
