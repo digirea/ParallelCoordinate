@@ -5,11 +5,16 @@
         <link rel="stylesheet" href="./stylesheets/style.css">
         <script src="./javascripts/lib/d3.min.js"></script>
         <script src="./javascripts/lib/d3.parcoords.js"></script>
+        <script src="./javascripts/lib/colormap.js"></script>
         <script src="./javascripts/glutil.js"></script>
         <script src="./javascripts/script.js"></script>
     </head>
     <body>
         <div id="container"></div>
+        <div id="pickercontainer">
+            <canvas id="pickercanvas"></canvas>
+            <input type="color" id="colorpicker">
+        </div>
         <div id="ui_layer" class="visible">
             <h2>webgl parcoord</h2>
             <p><input type="file" id="file"><label for="file">(*.csv)</label></p>

@@ -56,3 +56,26 @@ a {
 .html5jp-cpick {
 	width: 75px;
 }
+
+#pickercanvas {
+    width: 35px;
+    height: 256px;
+    position: absolute;
+    top: 100px;
+    /* right : 10px; */
+    left: 10px;
+}
+
+#pickercontainer {
+    overflow: hidden;
+}
+
+#colorpicker {
+    position: absolute;
+    top: 110px;
+    right: 12px;
+    opacity: 0.0;
+}
+
+
+

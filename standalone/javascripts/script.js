@@ -31,6 +31,8 @@
         var logScale = document.getElementById('logScale');
         logScale.addEventListener('change', function(){if(prev.prevType != null){useAxes();}}, false);
 
+        new ColorMap(document.getElementById('pickercanvas'), redraw);
+
         function fileUpload(eve){
             var file = eve.target.files[0];
             if(!file.type.match(/text/)){
