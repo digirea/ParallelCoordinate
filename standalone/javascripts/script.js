@@ -14,6 +14,11 @@
     // other private variable
     var csvData = null;
     var density = true;
+    var colormap = null;
+
+    // window size
+    var canvasAreaWidth = 1000;
+    var canvasAreaHeight = 700;
 
     window.addEventListener('load', function(){
         var prev = {prevType: null, glforeground: null, glbrush: null};
@@ -31,7 +36,19 @@
         var logScale = document.getElementById('logScale');
         logScale.addEventListener('change', function(){if(prev.prevType != null){useAxes();}}, false);
 
-        new ColorMap(document.getElementById('pickercanvas'), redraw);
+        new ColorMap(document.getElementById('pickercanvas'), function(e){
+            colormap = e;
+            redraw();
+        });
+
+        window.addEventListener('resize', windowResize, false);
+        windowResize();
+        function windowResize(eve){
+            var tw = window.innerWidth;
+            var th = window.innerHeight;
+            canvasAreaWidth = tw * 0.85;
+            canvasAreaHeight = th * 0.7;
+        }
 
         function fileUpload(eve){
             var file = eve.target.files[0];
@@ -130,10 +147,10 @@
                 }
                 linecount = dataval.length;
                 parcoords = d3.parcoords({dimensionTitles: dimensionTitles, usr: usr})('#example')
-                    .data(dataval)        // データの代入
-                    .mode("queue")        // 描画を WebGL Renderer に
-                    .width(1200)          // canvas のサイズ（横幅）
-                    .height(700);         // canvas のサイズ（縦）
+                    .data(dataval)
+                    .mode("queue")
+                    .width(canvasAreaWidth)
+                    .height(canvasAreaHeight);
 
                 glInitialize();
                 parcoords.render()        // ラインを描画する
@@ -212,16 +229,12 @@
                 if(glContext[name] == null){
                     glContext[name] = {
                         gl: c.getContext('webgl'),
-                        color:           [0.2, 0.2, 0.2, 0.1],
-                        lowColor:        [1.0, 1.0, 1.0],
-                        middleLowColor:  [0.2, 0.2, 0.2],
-                        middleColor:     [0.1, 0.5, 0.3],
-                        middleHighColor: [0.6, 0.6, 0.2],
-                        highColor:       [0.8, 0.2, 0.1],
+                        color: [0.2, 0.2, 0.2, 0.1],
                         pl: new prgLocations(),
                         plp: new prgLocations(),
                         plf: new prgLocations()
                     };
+                    glContext[name].texture = glContext[name].gl.createTexture();
                 }
             }
         }
@@ -240,27 +253,6 @@
                 b = parseInt(c[2]) / 255;
                 glContext[a[i - 1]].color = [r, g, b, 0.1];
             }
-            a = [
-                'lowColor',
-                'middleLowColor',
-                'middleColor',
-                'middleHighColor',
-                'highColor'
-            ];
-            for(i = 1; i <= 5; ++i){
-                e = document.getElementById('fgColor' + i);
-                c = e.style.backgroundColor.match(/\d+/g);
-                r = parseInt(c[0]) / 255;
-                g = parseInt(c[1]) / 255;
-                b = parseInt(c[2]) / 255;
-                glContext['glforeground'][a[i - 1]] = [r, g, b];
-                e = document.getElementById('brColor' + i);
-                c = e.style.backgroundColor.match(/\d+/g);
-                r = parseInt(c[0]) / 255;
-                g = parseInt(c[1]) / 255;
-                b = parseInt(c[2]) / 255;
-                glContext['glbrush'][a[i - 1]] = [r, g, b];
-            }
         }
 
         function fromArrayToPicker(){
@@ -274,23 +266,6 @@
                 g = zeroPadding(new Number(parseInt(glContext[a[i - 1]].color[1] * 255)).toString(16), 2);
                 b = zeroPadding(new Number(parseInt(glContext[a[i - 1]].color[2] * 255)).toString(16), 2);
                 e = document.getElementById('lineColor' + i).value = '#' + r + g + b;
-            }
-            a = [
-                'lowColor',
-                'middleLowColor',
-                'middleColor',
-                'middleHighColor',
-                'highColor'
-            ];
-            for(i = 1; i <= 5; ++i){
-                r = zeroPadding(new Number(parseInt(glContext['glforeground'][a[i - 1]][0] * 255)).toString(16), 2);
-                g = zeroPadding(new Number(parseInt(glContext['glforeground'][a[i - 1]][1] * 255)).toString(16), 2);
-                b = zeroPadding(new Number(parseInt(glContext['glforeground'][a[i - 1]][2] * 255)).toString(16), 2);
-                e = document.getElementById('fgColor' + i).value = '#' + r + g + b;
-                r = zeroPadding(new Number(parseInt(glContext['glbrush'][a[i - 1]][0] * 255)).toString(16), 2);
-                g = zeroPadding(new Number(parseInt(glContext['glbrush'][a[i - 1]][1] * 255)).toString(16), 2);
-                b = zeroPadding(new Number(parseInt(glContext['glbrush'][a[i - 1]][2] * 255)).toString(16), 2);
-                e = document.getElementById('brColor' + i).value = '#' + r + g + b;
             }
         }
         
@@ -425,30 +400,15 @@
                 gc.plf.fSource += 'uniform vec2 resolution;';
                 gc.plf.fSource += 'uniform sampler2D texture;';
                 gc.plf.fSource += 'uniform float density;';
-                gc.plf.fSource += 'uniform vec3 lowColor;';
-                gc.plf.fSource += 'uniform vec3 middleLowColor;';
-                gc.plf.fSource += 'uniform vec3 middleColor;';
-                gc.plf.fSource += 'uniform vec3 middleHighColor;';
-                gc.plf.fSource += 'uniform vec3 highColor;';
-                gc.plf.fSource += 'const float low = 0.2;';
-                gc.plf.fSource += 'const float middle = 0.4;';
-                gc.plf.fSource += 'const float high = 0.7;';
+                gc.plf.fSource += 'uniform sampler2D colorMap;';
                 gc.plf.fSource += 'void main(){';
                 gc.plf.fSource += '    if(density > 0.0){';
                 gc.plf.fSource += '        vec4 c = color;';
                 gc.plf.fSource += '        vec2 texcoord = gl_FragCoord.st / resolution;';
                 gc.plf.fSource += '        vec4 smpColor = texture2D(texture, texcoord);';
                 gc.plf.fSource += '        float range = smpColor.a / density;';
-                gc.plf.fSource += '        if(range < low){';
-                gc.plf.fSource += '            c = vec4(mix(lowColor, middleLowColor, smoothstep(0.0, low, range)) * 1.0, 1.0);';
-                gc.plf.fSource += '        }else if(range < middle){';
-                gc.plf.fSource += '            c = vec4(mix(middleLowColor, middleColor, smoothstep(low, middle, range)) * 1.0, 1.0);';
-                gc.plf.fSource += '        }else if(range < high){';
-                gc.plf.fSource += '            c = vec4(mix(middleColor, middleHighColor, smoothstep(middle, high, range)) * 1.0, 1.0);';
-                gc.plf.fSource += '        }else{';
-                gc.plf.fSource += '            c = vec4(mix(middleHighColor, highColor, smoothstep(high, 1.0, range)) * 1.0, 1.0);';
-                gc.plf.fSource += '        }';
-                gc.plf.fSource += '        gl_FragColor = vec4(c.rgb, range * 3.0);';
+                gc.plf.fSource += '        vec4 tex = texture2D(colorMap, vec2(range, 0.0));'; // temp
+                gc.plf.fSource += '        gl_FragColor = vec4(tex.rgb, range * 3.0);';
                 gc.plf.fSource += '    }else{';
                 gc.plf.fSource += '        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);';
                 gc.plf.fSource += '    }';
@@ -465,11 +425,7 @@
                     resolution: gl.getUniformLocation(gc.plf.prg, 'resolution'),
                     texture: gl.getUniformLocation(gc.plf.prg, 'texture'),
                     density: gl.getUniformLocation(gc.plf.prg, 'density'),
-                    lowColor: gl.getUniformLocation(gc.plf.prg, 'lowColor'),
-                    middleLowColor: gl.getUniformLocation(gc.plf.prg, 'middleLowColor'),
-                    middleColor: gl.getUniformLocation(gc.plf.prg, 'middleColor'),
-                    middleHighColor: gl.getUniformLocation(gc.plf.prg, 'middleHighColor'),
-                    highColor: gl.getUniformLocation(gc.plf.prg, 'highColor')
+                    colorMap: gl.getUniformLocation(gc.plf.prg, 'colorMap')
                 };
 
                 (function(){
@@ -499,6 +455,17 @@
                 // 初回ロードではない場合色取得
                 fromPickerToArray();
             }
+
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.activeTexture(gl.TEXTURE2);
+            gl.bindTexture(gl.TEXTURE_2D, gc.texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, colormap.canvas);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.activeTexture(gl.TEXTURE0);
 
             gl.enable(gl.BLEND);
             gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
@@ -590,11 +557,7 @@
                 gl.uniform2fv(gc.plf.uniL.resolution, [width, height]);
                 gl.uniform1i(gc.plf.uniL.texture, 0);
                 gl.uniform1f(gc.plf.uniL.density, lines);
-                gl.uniform3fv(gc.plf.uniL.lowColor, gc.lowColor);
-                gl.uniform3fv(gc.plf.uniL.middleLowColor, gc.middleLowColor);
-                gl.uniform3fv(gc.plf.uniL.middleColor, gc.middleColor);
-                gl.uniform3fv(gc.plf.uniL.middleHighColor, gc.middleHighColor);
-                gl.uniform3fv(gc.plf.uniL.highColor, gc.highColor);
+                gl.uniform1i(gc.plf.uniL.colorMap, 2);
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
             }else{
