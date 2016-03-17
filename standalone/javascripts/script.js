@@ -28,6 +28,8 @@
         var densityRange = 95;
         var fileInput = document.getElementById('file');
         fileInput.addEventListener('change', fileUpload, false);
+        var logScale = document.getElementById('logScale');
+        logScale.addEventListener('change', function(){if(prev.prevType != null){useAxes();}}, false);
 
         function fileUpload(eve){
             var file = eve.target.files[0];
@@ -142,7 +144,7 @@
 
         function param(){
             usr = {
-                ratecount: 10,
+                logScale: logScale.checked,
                 glRender: glRender
             };
             reset();

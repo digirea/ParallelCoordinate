@@ -188,9 +188,16 @@ d3.parcoords = function(config) {
                         .rangePoints([h()+1, 1]);
                 }
 
-                return d3.scale.linear()
+                // log scale するとしたらここ（真偽値で厳密チェックする
+                if(config.usr.logScale === true){
+                    return d3.scale.log()
                     .domain(extent)
                     .range([h()+1, 1]);
+                }else{
+                    return d3.scale.linear()
+                    .domain(extent)
+                    .range([h()+1, 1]);
+                }
             },
             "string": function(k) {
                 var counts = {},
