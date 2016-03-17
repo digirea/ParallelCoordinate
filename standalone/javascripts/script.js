@@ -57,11 +57,21 @@
             var reader = new FileReader();
             reader.onload = function(eve) {
                 var data = eve.target.result;
-                var p = sph.isSPH(data);
-                if(p.type){
-                    targetData = sph.parse(data);
+                var b = sph.isBinary(data);
+                if(b){
+                    reader.onload = function(eve){
+                        var data = eve.target.result;
+                        var b = sph.isSPH(data);
+                        if(b){
+                            targetData = sph.parse(data);
+                        }else{
+                            console.log('invalid file!');
+                            return;
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
                 }else{
-                    targetData = convertCSV(eve.target.result);
+                    targetData = convertCSV(data);
                 }
                 useAxes();
                 setTimeout(function(){
@@ -70,7 +80,7 @@
                     e.src = './javascripts/lib/cpick.js';
                 }, 200);
             };
-            reader.readAsText(file, "utf-8");
+            reader.readAsBinaryString(file);
         }
 
         function redraw(){
