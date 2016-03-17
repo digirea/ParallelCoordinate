@@ -1,7 +1,7 @@
 
 function SPHLoader(){}
 
-// readAsBinaryString
+// argument:data => from readAsBinaryString
 SPHLoader.prototype.isBinary = function(data){
     var i, j, k, l;
     k = []; l = 0;
@@ -13,6 +13,7 @@ SPHLoader.prototype.isBinary = function(data){
     return (l > 1);
 };
 
+// argument:data => from readAsArrayBuffer
 SPHLoader.prototype.isSPH = function(data){
     var i, j, k, l;
     var dv = new DataView(data, 0, 4);
@@ -64,6 +65,7 @@ SPHLoader.prototype.isSPH = function(data){
     return k;
 };
 
+// return float array
 SPHLoader.prototype.parse = function(data, param){
     if(data == null || param == null){return;}
     var dest = [];

@@ -38,7 +38,7 @@ a {
     background-color: rgba(0, 0, 0, 0.85);
     color: white;
     width: 100%;
-    height: 100px;
+    height: 250px;
     position: absolute;
     left: 0px;
     bottom: 0px;
@@ -47,11 +47,10 @@ a {
 }
 
 #ui_layer p {
-    border-right: 2px solid silver;
+    border-right: 1px solid #333;
     line-height: 60px;
     margin: 10px 0px;
     padding: 10px 20px;
-    height: 60px;
 }
 
 .html5lp {
