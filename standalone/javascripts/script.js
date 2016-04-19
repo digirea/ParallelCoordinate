@@ -75,6 +75,7 @@
                                     if(params[index]){
                                         targetData[index] = data[index];
                                         f = true;
+                                        // load complete check
                                         for(i = 0; i < fileLength; ++i){
                                             f = f && (targetData[i] !== null && targetData[i] !== undefined);
                                         }
@@ -87,8 +88,10 @@
                             })(index);
                             reader[index].readAsArrayBuffer(file[index]);
                         }else{
-                            targetData[index] = data[index];
-                            begin();
+                            if(index === 0){
+                                targetData[index] = data[index];
+                                begin();
+                            }
                         }
                     };
                 })(i);

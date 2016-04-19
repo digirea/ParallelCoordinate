@@ -72,11 +72,19 @@ SPHLoader.prototype.parse = function(data, param){
     var x, y, z, e, tx, ty, tz, te, f, i;
     var dv = new DataView(data, param.nowOffset);
     f = param.endian; i = 0;
+    param.min = []; param.max = [];
+    for(e = 0, te = param.component; e < te; ++e){
+        param.min[e] = 0;
+        param.max[e] = 0;
+    }
     for(z = 0, tz = param.kmax; z < tz; ++z){
         for(y = 0, ty = param.jmax; y < ty; ++y){
             for(x = 0, tx = param.imax; x < tx; ++x){
                 for(e = 0, te = param.component; e < te; ++e){
-                    dest.push(dv.getFloat32(i * 4, f));
+                    j = dv.getFloat32(i * 4, f);
+                    dest.push(j);
+                    param.min[e] = Math.min(param.min[e], j);
+                    param.max[e] = Math.max(param.max[e], j);
                     ++i;
                 }
             }
