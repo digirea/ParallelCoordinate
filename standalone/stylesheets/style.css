@@ -84,7 +84,14 @@ a {
     flex-direction: row;
 }
 
-.caption, .value {
+.caption {
+    padding: 10px 20px;
+    min-width: 100px;
+    max-width: 50%;
+    overflow: hidden;
+}
+
+.value {
     padding: 10px 20px;
     min-width: 100px;
 }

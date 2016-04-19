@@ -25,6 +25,7 @@
     window.addEventListener('load', function(){
         var prev = {prevType: null, glforeground: null, glbrush: null};
         var dataval = null;
+        var dataparam = null;
         var linecount;
         var colcount;
         var dimensionTitles = {};
@@ -79,13 +80,6 @@
                                     params[index] = sph.isSPH(data[index]);
                                     params[index].name = fileNames[index];
                                     colcount += params[index].component;
-                                    if(params[index].component === 1){
-                                        dimensionTitles[colcount - 1] = params[index].name;
-                                    }else{
-                                        dimensionTitles[colcount - 3] = params[index].name + '_x';
-                                        dimensionTitles[colcount - 2] = params[index].name + '_y';
-                                        dimensionTitles[colcount - 1] = params[index].name + '_z';
-                                    }
                                     if(params[index]){
                                         f = true;
                                         // load complete check
@@ -174,6 +168,24 @@
             }
             if(!f){return null;}
 
+            // minmax をチェック
+            dataparam = [];
+            j = 0;
+            for(i = 0; i < data.length; ++i){
+                j += params[i].component;
+                if(params[i].component === 1){
+                    dimensionTitles[j - 1] = params[i].name;
+                    dataparam[j - 1] = {name: dimensionTitles[j - 1], min: params[i].min[0], max: params[i].max[0]};
+                }else{
+                    dimensionTitles[j - 3] = params[i].name + '_x';
+                    dimensionTitles[j - 2] = params[i].name + '_y';
+                    dimensionTitles[j - 1] = params[i].name + '_z';
+                    dataparam[j - 3] = {name: dimensionTitles[j - 3], min: params[i].min[2], max: params[i].max[2]};
+                    dataparam[j - 2] = {name: dimensionTitles[j - 2], min: params[i].min[1], max: params[i].max[1]};
+                    dataparam[j - 1] = {name: dimensionTitles[j - 1], min: params[i].min[0], max: params[i].max[0]};
+                }
+            }
+
             for(i = 0, j = temp[0].length; i < j; ++i){
                 a = [];
                 for(k = 0; k < temp.length; ++k){
@@ -188,32 +200,47 @@
 
         function convertCSV(data){
             var header, temp, dest, rowcell;
-            var i, j, k, l, m;
+            var i, j, k, l, m, n;
             dest = [];
             if(data === null || data === undefined || data === ''){return;}
             temp = data.split('\n');
             if(temp === null || temp === undefined || !temp.length || temp.length < 3){return;}
             header = temp[0].split(',');
             k = true;
+            dataparam = [];
             for(i = 0, j = header.length; i < j; ++i){
                 k = k && (header[i].match(/^(-\d|\.)+$/));
                 if(!k){break;}
             }
             if(!k){ // use header strings
+                for(i = 0, j = header.length; i < j; ++i){
+                    dataparam[i] = {name: header[i], min: 0.0, max: 0.0};
+                }
                 for(i = 1, j = temp.length; i < j; ++i){
                     m = i - 1;
                     dest[m] = {};
                     rowcell = temp[i].split(',');
                     for(l = 0; l < header.length; ++l){
-                        dest[m][header[l]] = rowcell[l];
+                        n = parseFloat(rowcell[l]);
+                        if(isNaN(n)){n = 0.0;}
+                        dest[m][header[l]] = n;
+                        dataparam[l].min = Math.min(dataparam[l].min, n);
+                        dataparam[l].max = Math.max(dataparam[l].max, n);
                     }
                 }
             }else{
+                for(i = 0, j = header.length; i < j; ++i){
+                    dataparam[i] = {name: i, min: 0.0, max: 0.0};
+                }
                 for(i = 0, j = temp.length; i < j; ++i){
                     dest[i] = {};
                     rowcell = temp[i].split(',');
                     for(l = 0; l < rowcell.length; ++l){
-                        dest[m][i] = rowcell[l];
+                        n = parseFloat(rowcell[l]);
+                        if(isNaN(n)){n = 0.0;}
+                        dest[m][i] = n;
+                        dataparam[l].min = Math.min(dataparam[l].min, n);
+                        dataparam[l].max = Math.max(dataparam[l].max, n);
                     }
                 }
             }
@@ -263,7 +290,51 @@
                     .reorderable()        // 軸の並び替え有効化
                     .brushMode("1D-axes") // 抽出のやり方
                     .interactive();       // 常時更新
+
+                // minmax
+                minmaxDOM();
             }
+        }
+
+        function minmaxDOM(){
+            var i, j, e, f;
+            e = document.getElementById('minmax');
+            e.innerHTML = '';
+            for(i = 0, j = Object.keys(dataparam).length; i < j; ++i){
+                f = minmaxRow(dataparam[i].name, dataparam[i].name, dataparam[i].min, dataparam[i].max);
+                e.appendChild(f);
+            }
+        }
+
+        function minmaxRow(name, caption, min, max){
+            var e = document.createElement('div');
+            e.className = 'minmaxRow';
+            var f = document.createElement('div');
+            f.className = 'caption';
+            f.textContent = caption;
+            var g = document.createElement('div');
+            g.className = 'value';
+            g.textContent = 'min: ';
+            var i = document.createElement('input');
+            i.type = 'number';
+            i.value = min;
+            i.step = 0.0001;
+            i.id = 'min_' + name;
+            g.appendChild(i);
+            var h = document.createElement('div');
+            h.className = 'value';
+            h.textContent = 'max: ';
+            var j = document.createElement('input');
+            j.type = 'number';
+            j.value = max;
+            j.step = 0.0001;
+            j.id = 'max_' + name;
+            h.appendChild(j);
+
+            e.appendChild(f);
+            e.appendChild(g);
+            e.appendChild(h);
+            return e;
         }
 
         function param(){
