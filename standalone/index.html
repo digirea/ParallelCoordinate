@@ -19,21 +19,32 @@
             </div>
         </div>
         <div id="ui_layer">
-            <div class="cols">
-                <p><input type="file" id="file" multiple></p>
-                <p><input type="checkbox" id="density"><label for="density" title="密度ベースレンダリング"> density </label></p>
-                <p><input type="checkbox" id="densityNormal" checked><label for="densityNormal" title="選択中のラインのみで密度を正規化して着色"> density normalize </label></p>
-                <p><input type="checkbox" id="logScale"><label for="logScale" title="Log スケール"> log scale </label></p>
+            <div class="rows">
+                <div class="cols">
+                    <p><input type="file" id="file" multiple></p>
+                    <p><input type="checkbox" id="density"><label for="density" title="密度ベースレンダリング"> density </label></p>
+                    <p><input type="checkbox" id="densityNormal" checked><label for="densityNormal" title="選択中のラインのみで密度を正規化して着色"> density normalize </label></p>
+                    <p><input type="checkbox" id="logScale"><label for="logScale" title="Log スケール"> log scale </label></p>
+                </div>
+                <div class="cols">
+                    <p class="html5lp">
+                        <span class="labels">lines</span>
+                        <input id="lineColor1" class="html5jp-cpick [coloring:true]" type="text" value="#FFFFFF">
+                    </p>
+                    <p class="html5lp">
+                        <span class="labels">selected</span>
+                        <input id="lineColor2" class="html5jp-cpick [coloring:true]" type="text" value="#CCCCCC">
+                    </p>
+                </div>
             </div>
-            <div class="cols">
-                <p class="html5lp">
-                    <span class="labels">lines</span>
-                    <input id="lineColor1" class="html5jp-cpick [coloring:true]" type="text" value="#FFFFFF">
-                </p>
-                <p class="html5lp">
-                    <span class="labels">selected</span>
-                    <input id="lineColor2" class="html5jp-cpick [coloring:true]" type="text" value="#CCCCCC">
-                </p>
+            <div class="rows">
+                <div id="minmax">
+                    <div class="minmaxRow">
+                        <div class="caption">aaaaa</div>
+                        <div class="value">min: <input type="number" value="0.0" step="0.00001"></div>
+                        <div class="value">max: <input type="number" value="0.0" step="0.00001"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </body>

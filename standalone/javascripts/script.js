@@ -115,7 +115,7 @@
                             for(i = 0; i < fileLength; ++i){
                                 targetData[i] = sph.parse(data[i], params[i]);
                             }
-                            targetData[0] = convertSPH(targetData);
+                            targetData[0] = convertSPH(targetData, params);
                         }else{
                             targetData[0] = convertCSV(data[0]);
                         }
