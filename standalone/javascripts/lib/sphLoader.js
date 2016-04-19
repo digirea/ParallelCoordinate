@@ -68,7 +68,7 @@ SPHLoader.prototype.isSPH = function(data){
 // return float array
 SPHLoader.prototype.parse = function(data, param){
     if(data == null || param == null){return;}
-    var dest = [];
+    var dest = [], a = [];
     var x, y, z, e, tx, ty, tz, te, f, i;
     var dv = new DataView(data, param.nowOffset);
     f = param.endian; i = 0;
@@ -80,13 +80,15 @@ SPHLoader.prototype.parse = function(data, param){
     for(z = 0, tz = param.kmax; z < tz; ++z){
         for(y = 0, ty = param.jmax; y < ty; ++y){
             for(x = 0, tx = param.imax; x < tx; ++x){
+                a = [];
                 for(e = 0, te = param.component; e < te; ++e){
                     j = dv.getFloat32(i * 4, f);
-                    dest.push(j);
+                    a.push(j);
                     param.min[e] = Math.min(param.min[e], j);
                     param.max[e] = Math.max(param.max[e], j);
                     ++i;
                 }
+                dest.push(a);
             }
         }
     }

@@ -26,6 +26,7 @@
         var prev = {prevType: null, glforeground: null, glbrush: null};
         var dataval = null;
         var linecount;
+        var colcount;
         var dimensionTitles = {};
 
         var densityCheck = document.getElementById('density');
@@ -53,13 +54,15 @@
         }
 
         // SPH は複数許可、CSV なら単体ファイルしか受け付けない
+        // SPH の場合は包含する component の要素数を考慮して合計値が複数になれば描画
         function fileUpload(evt){
             if(!evt.target.files && evt.target.files.length < 1){return;}
             var i;
             var fileLength = evt.target.files.length;
             var flg = [], files = [], fileNames = [], reader = [], data = [], params = [];
-            targetData = [];
+            targetData = null;
             dimensionTitles = {};
+            colcount = 0;
             for(i = 0; i < fileLength; ++i){
                 files[i] = evt.target.files[i];
                 fileNames[i] = files[i].name;
@@ -75,15 +78,21 @@
                                     data[index] = eve.target.result;
                                     params[index] = sph.isSPH(data[index]);
                                     params[index].name = fileNames[index];
-                                    dimensionTitles[index] = params[index].name;
+                                    colcount += params[index].component;
+                                    if(params[index].component === 1){
+                                        dimensionTitles[colcount - 1] = params[index].name;
+                                    }else{
+                                        dimensionTitles[colcount - 3] = params[index].name + '_x';
+                                        dimensionTitles[colcount - 2] = params[index].name + '_y';
+                                        dimensionTitles[colcount - 1] = params[index].name + '_z';
+                                    }
                                     if(params[index]){
-                                        targetData[index] = data[index];
                                         f = true;
                                         // load complete check
                                         for(j = 0; j < fileLength; ++j){
-                                            f = f && (targetData[j] !== null && targetData[j] !== undefined);
+                                            f = f && (data[j] !== null && data[j] !== undefined && typeof data[j] === 'object');
                                         }
-                                        if(f){begin();}
+                                        if(f){begin(true);}
                                     }else{
                                         console.log('invalid file!');
                                         return;
@@ -93,15 +102,14 @@
                             reader[index].readAsArrayBuffer(files[index]);
                         }else{
                             if(index === 0){
-                                targetData[index] = data[index];
-                                begin();
+                                begin(false);
                             }
                         }
                     };
                 })(i);
                 reader[i].readAsBinaryString(files[i]);
             }
-            function begin(){
+            function begin(issph){
                 var i, f, g;
                 f = true;
                 g = flg[0];
@@ -109,30 +117,35 @@
                     f = f && (g === flg[i]);
                 }
                 if(f){
-                    // バイナリかつファイル数２以上か、CSV かつファイル数１のみ
-                    if((g === true && fileLength > 1) || (!g && fileLength === 1)){
-                        if(g){
-                            for(i = 0; i < fileLength; ++i){
-                                targetData[i] = sph.parse(data[i], params[i]);
-                            }
-                            targetData[0] = convertSPH(targetData, params);
+                    if(issph){
+                        // type sph
+                        if(colcount > 1){
+                            targetData = convertSPH(data, params);
                         }else{
-                            targetData[0] = convertCSV(data[0]);
-                        }
-                        useAxes();
-                        setTimeout(function(){
-                            var e = document.createElement('script');
-                            document.body.appendChild(e);
-                            e.src = './javascripts/lib/cpick.js';
-                        }, 100);
-                        return;
-                    }else{
-                        if(g){
                             console.log('please multiple select files');
+                            return;
+                        }
+                    }else{
+                        // type csv
+                        if(!g && fileLength === 1){
+                            targetData = convertCSV(data[0]);
                         }else{
-                            console.log('invalid csv');
+                            console.log('please select single csv');
+                            return;
                         }
                     }
+                    if(!targetData){
+                        console.log('null data');
+                        return;
+                    }
+                    useAxes();
+                    setTimeout(function(){
+                        var e = document.createElement('script');
+                        document.body.appendChild(e);
+                        e.src = './javascripts/lib/cpick.js';
+                    }, 100);
+                }else{
+                    console.log('invalid file type');
                 }
             }
         }
@@ -147,20 +160,26 @@
         }
         global.redrawing = redraw;
 
-        function convertSPH(data){
+        function convertSPH(data, params){
+            var temp = [];
             var dest = [];
-            var a, i, j, k;
+            var a, i, j, k, l;
             var f = true;
+            for(i = 0, j = data.length; i < j; ++i){
+                temp[i] = sph.parse(data[i], params[i]);
+            }
             // 要素数が同じかどうかチェック
-            for(i = 1, j = data.length; i < j; ++i){
-                f = f && (data[0].length === data[i].length);
+            for(i = 1, j = temp.length; i < j; ++i){
+                f = f && (temp[0].length === temp[i].length);
             }
             if(!f){return null;}
 
-            for(i = 0, j = data[0].length; i < j; ++i){
+            for(i = 0, j = temp[0].length; i < j; ++i){
                 a = [];
-                for(k = 0; k < data.length; ++k){
-                    a.push(data[k][i]);
+                for(k = 0; k < temp.length; ++k){
+                    for(l = 0; l < temp[k][i].length; ++l){
+                        a.push(temp[k][i][l]);
+                    }
                 }
                 dest.push(a);
             }
@@ -206,7 +225,7 @@
             param();
             if(targetData == null){return;}
 
-            beginDraw(targetData[0]);
+            beginDraw(targetData);
 
             function beginDraw(data){
                 if(data.length < 3){console.log('invalid data:' + data); return;}
