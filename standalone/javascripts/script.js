@@ -53,14 +53,16 @@
         }
 
         // SPH は複数許可、CSV なら単体ファイルしか受け付けない
-        function fileUpload(eve){
-            if(!eve.target.files && eve.target.files.length < 1){return;}
+        function fileUpload(evt){
+            if(!evt.target.files && evt.target.files.length < 1){return;}
             var i;
-            var fileLength = eve.target.files.length;
-            var flg = [], file = [], reader = [], data = [], params = [];
+            var fileLength = evt.target.files.length;
+            var flg = [], files = [], fileNames = [], reader = [], data = [], params = [];
             targetData = [];
+            dimensionTitles = {};
             for(i = 0; i < fileLength; ++i){
-                file[i] = eve.target.files[i];
+                files[i] = evt.target.files[i];
+                fileNames[i] = files[i].name;
                 reader[i] = new FileReader();
                 reader[i].onload = (function(index){
                     return function(eve){
@@ -69,15 +71,17 @@
                         if(flg[index]){
                             reader[index].onload = (function(index){
                                 return function(eve){
-                                    var i, f;
+                                    var j, f;
                                     data[index] = eve.target.result;
                                     params[index] = sph.isSPH(data[index]);
+                                    params[index].name = fileNames[index];
+                                    dimensionTitles[index] = params[index].name;
                                     if(params[index]){
                                         targetData[index] = data[index];
                                         f = true;
                                         // load complete check
-                                        for(i = 0; i < fileLength; ++i){
-                                            f = f && (targetData[i] !== null && targetData[i] !== undefined);
+                                        for(j = 0; j < fileLength; ++j){
+                                            f = f && (targetData[j] !== null && targetData[j] !== undefined);
                                         }
                                         if(f){begin();}
                                     }else{
@@ -86,7 +90,7 @@
                                     }
                                 };
                             })(index);
-                            reader[index].readAsArrayBuffer(file[index]);
+                            reader[index].readAsArrayBuffer(files[index]);
                         }else{
                             if(index === 0){
                                 targetData[index] = data[index];
@@ -95,7 +99,7 @@
                         }
                     };
                 })(i);
-                reader[i].readAsBinaryString(file[i]);
+                reader[i].readAsBinaryString(files[i]);
             }
             function begin(){
                 var i, f, g;
@@ -205,14 +209,9 @@
             beginDraw(targetData[0]);
 
             function beginDraw(data){
-                debugger;
                 if(data.length < 3){console.log('invalid data:' + data); return;}
-                dimensionTitles = {};
                 dataval = [];
                 if(Array.isArray(data[0])){ // csv 先頭行がタイトルではない
-                    for(i = 0, j = data[0].length; i < j; ++i){
-                        dimensionTitles[i] = i;
-                    }
                     for(i = 0, j = data.length; i < j; ++i){
                         dataval[i] = [];
                         for(k = 0, l = data[i].length; k < l; ++k){
