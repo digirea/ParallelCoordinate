@@ -384,7 +384,7 @@ d3.parcoords = function(config) {
 
     function glData(v, target){
         if(v == null || v.length === 0){pc.glRender(target, null); return;}
-        var a, b, c, d, i, j, k, l, m, x, y, left, right;
+        var a, b, c, d, e, f, i, j, k, l, m, x, y, left, right;
         a = [];
         k = v[0].length;
         for(i = 0, j = v.length; i < j; ++i){
@@ -404,14 +404,21 @@ d3.parcoords = function(config) {
             for(l = 0, m = c.length; l < m; ++l){
                 d.push(c[l].colCount);
             }
+            f = true;
             for(l = 0; l < k; ++l){
-                x = position(d[l]);
-                y = yscale[d[l]](v[i][d[l]]);
-                if(l <= 1){
-                    a.push(x, y);
-                }else{
-                    m = b + (l - 1) * 4;
-                    a.push(a[m - 2], a[m - 1], x, y);
+                e = v[i][d[l]];
+                f = f && (e >= config.usr.param[l].min && e <= config.usr.param[l].max);
+            }
+            if(f){
+                for(l = 0; l < k; ++l){
+                    x = position(d[l]);
+                    y = yscale[d[l]](v[i][d[l]]);
+                    if(l <= 1){
+                        a.push(x, y);
+                    }else{
+                        m = b + (l - 1) * 4;
+                        a.push(a[m - 2], a[m - 1], x, y);
+                    }
                 }
             }
         }
