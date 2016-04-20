@@ -157,7 +157,7 @@ d3.parcoords = function(config) {
     };
 
     function without(arr, item) {
-        return arr.filter(function(elem) { return item.indexOf(elem) === -1; })
+        return arr.filter(function(elem) { return item.indexOf(elem) === -1; });
     };
     pc.autoscale = function() {
         // yscale

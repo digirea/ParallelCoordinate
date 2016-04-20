@@ -46,9 +46,9 @@ a {
 }
 
 #ui_layer p {
-    border-right: 1px solid #333;
-    margin: 10px 0px;
-    padding: 10px 20px;
+    border-right: 1px solid #555;
+    margin: 0px;
+    padding: 15px;
 }
 
 .html5lp {
@@ -59,7 +59,7 @@ a {
 }
 
 .rows {
-    padding: 20px 0px;
+    padding: 10px 0px;
     display: flex;
     flex-direction: row;
 }
