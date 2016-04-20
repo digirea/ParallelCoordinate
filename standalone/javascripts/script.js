@@ -249,7 +249,6 @@
 
         function useAxes(){
             var i, j, k, l;
-            param();
             if(targetData == null){return;}
 
             beginDraw(targetData);
@@ -277,6 +276,8 @@
                         }
                     }
                 }
+                // レンダリングのためのパラメータをセット
+                setparam();
                 linecount = dataval.length;
                 parcoords = d3.parcoords({dimensionTitles: dimensionTitles, usr: usr})('#example')
                     .data(dataval)
@@ -301,7 +302,7 @@
             e = document.getElementById('minmax');
             e.innerHTML = '';
             for(i = 0, j = Object.keys(dataparam).length; i < j; ++i){
-                f = minmaxRow(dataparam[i].name, dataparam[i].name, dataparam[i].min, dataparam[i].max);
+                f = minmaxRow(i, dataparam[i].name, dataparam[i].min, dataparam[i].max);
                 e.appendChild(f);
             }
         }
@@ -334,13 +335,37 @@
             e.appendChild(f);
             e.appendChild(g);
             e.appendChild(h);
+
+            i.addEventListener('blur', inputBlur, false);
+            j.addEventListener('blur', inputBlur, false);
+            i.addEventListener('keydown', inputEnter, false);
+            j.addEventListener('keydown', inputEnter, false);
             return e;
         }
 
-        function param(){
+        function inputBlur(eve){
+            var e, f, i;
+            e = eve.currentTarget;
+            i = e.id.replace(/^(min_|max_)/, '');
+            e = document.getElementById('min_' + i);
+            f = document.getElementById('max_' + i);
+            if(e){dataparam[i].min = e.value;}
+            if(f){dataparam[i].max = f.value;}
+            if(prev.prevType != null){useAxes();}
+        }
+
+        function inputEnter(eve){
+            if(eve.keyCode === 13){
+                eve.currentTarget.blur();
+                inputBlur(eve);
+            }
+        }
+
+        function setparam(){
             usr = {
                 logScale: logScale.checked,
-                glRender: glRender
+                glRender: glRender,
+                param: dataparam
             };
             reset();
         }

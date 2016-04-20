@@ -181,6 +181,13 @@ d3.parcoords = function(config) {
             "number": function(k) {
                 var extent = d3.extent(__.data, function(d) { return +d[k]; });
 
+                // minmax 設定してるのここ
+                if(config.usr.param &&
+                   config.usr.param[k].min !== null && config.usr.param[k].min !== undefined &&
+                   config.usr.param[k].max !== null && config.usr.param[k].max !== undefined){
+                    extent = [config.usr.param[k].min, config.usr.param[k].max];
+                }
+
                 // special case if single value
                 if (extent[0] === extent[1]) {
                     return d3.scale.ordinal()
