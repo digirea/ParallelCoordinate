@@ -56,6 +56,24 @@
             canvasAreaHeight = Math.min(canvasAreaHeight, th * 0.7);
         }
 
+        document.getElementById('dimx').addEventListener('blur', dimUpdate, false);
+        document.getElementById('dimy').addEventListener('blur', dimUpdate, false);
+        document.getElementById('dimz').addEventListener('blur', dimUpdate, false);
+        document.getElementById('dimx').addEventListener('keydown', dimEneter, false);
+        document.getElementById('dimy').addEventListener('keydown', dimEneter, false);
+        document.getElementById('dimz').addEventListener('keydown', dimEneter, false);
+        function dimUpdate(eve){
+            var i = eve.currentTarget.value;
+            if(i && !isNaN(i) && i > 0 && issph){
+                targetData = convertSPH(data, params);
+                useAxes();
+            }
+        }
+        function dimEneter(eve){
+            if(eve.keyCode === 13){dimUpdate(eve);}
+        }
+
+
         // SPH は複数許可、CSV なら単体ファイルしか受け付けない
         // SPH の場合は包含する component の要素数を考慮して合計値が複数になれば描画
         function fileUpload(evt){
