@@ -17,8 +17,8 @@
     var colormap = null;
 
     // window size
-    var canvasAreaWidth = 1200;
-    var canvasAreaHeight = 700;
+    var canvasAreaWidth = 800;
+    var canvasAreaHeight = 500;
 
     var sph = new SPHLoader();
     var issph = null;
