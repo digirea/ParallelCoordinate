@@ -72,7 +72,7 @@ SPHLoader.prototype.parse = function(data, param){
     var x, y, z, e, tx, ty, tz, te, f, i;
     var sx, sy, sz;
     var dv = new DataView(data, param.nowOffset);
-    f = param.endian; i = 0;
+    f = param.endian;
     param.min = []; param.max = [];
     for(e = 0, te = param.component; e < te; ++e){
         param.min[e] = 0;
@@ -84,6 +84,21 @@ SPHLoader.prototype.parse = function(data, param){
         sy = Math.max(Math.ceil(param.jmax / param.samplingDiv.y), 1.0);
         sz = Math.max(Math.ceil(param.kmax / param.samplingDiv.z), 1.0);
     }
+    // minmax check
+    i = 0;
+    for(z = 0, tz = param.kmax; z < tz; ++z){
+        for(y = 0, ty = param.jmax; y < ty; ++y){
+            for(x = 0, tx = param.imax; x < tx; ++x){
+                for(e = 0, te = param.component; e < te; ++e){
+                    j = dv.getFloat32(i * 4, f);
+                    param.min[e] = Math.min(param.min[e], j);
+                    param.max[e] = Math.max(param.max[e], j);
+                    ++i;
+                }
+            }
+        }
+    }
+    i = 0;
     for(z = 0, tz = param.kmax; z < tz; z += sz){
         for(y = 0, ty = param.jmax; y < ty; y += sy){
             for(x = 0, tx = param.imax; x < tx; x += sx){
@@ -91,8 +106,6 @@ SPHLoader.prototype.parse = function(data, param){
                 for(e = 0, te = param.component; e < te; ++e){
                     j = dv.getFloat32(i * 4, f);
                     a.push(j);
-                    param.min[e] = Math.min(param.min[e], j);
-                    param.max[e] = Math.max(param.max[e], j);
                     ++i;
                 }
                 dest.push(a);
