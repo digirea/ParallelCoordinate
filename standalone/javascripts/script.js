@@ -21,6 +21,7 @@
     var canvasAreaHeight = 700;
 
     var sph = new SPHLoader();
+    var issph = null;
 
     window.addEventListener('load', function(){
         var prev = {prevType: null, glforeground: null, glbrush: null};
@@ -29,6 +30,7 @@
         var linecount;
         var colcount;
         var dimensionTitles = {};
+        var data = [], params = [];
 
         var densityCheck = document.getElementById('density');
         densityCheck.addEventListener('change', redraw, false);
@@ -60,7 +62,9 @@
             if(!evt.target.files && evt.target.files.length < 1){return;}
             var i;
             var fileLength = evt.target.files.length;
-            var flg = [], files = [], fileNames = [], reader = [], data = [], params = [];
+            var flg = [], files = [], fileNames = [], reader = [];
+            data = [];
+            params = [];
             targetData = null;
             dimensionTitles = {};
             colcount = 0;
@@ -86,7 +90,10 @@
                                         for(j = 0; j < fileLength; ++j){
                                             f = f && (data[j] !== null && data[j] !== undefined && typeof data[j] === 'object');
                                         }
-                                        if(f){begin(true);}
+                                        if(f){
+                                            issph = true;
+                                            begin();
+                                        }
                                     }else{
                                         console.log('invalid file!');
                                         return;
@@ -96,15 +103,16 @@
                             reader[index].readAsArrayBuffer(files[index]);
                         }else{
                             if(index === 0){
-                                begin(false);
+                                issph = false;
+                                begin();
                             }
                         }
                     };
                 })(i);
                 reader[i].readAsBinaryString(files[i]);
             }
-            function begin(issph){
-                var i, f, g;
+            function begin(){
+                var i, j, k, l, f, g;
                 f = true;
                 g = flg[0];
                 for(i = 1; i < fileLength; ++i){
@@ -159,7 +167,14 @@
             var dest = [];
             var a, i, j, k, l;
             var f = true;
-            for(i = 0, j = data.length; i < j; ++i){
+            j = parseInt(document.getElementById('dimx').value, 10);
+            if(!j || isNaN(j) || j < 1){j = 100;}
+            k = parseInt(document.getElementById('dimy').value, 10);
+            if(!k || isNaN(k) || k < 1){k = 100;}
+            l = parseInt(document.getElementById('dimz').value, 10);
+            if(!l || isNaN(l) || l < 1){l = 100;}
+            for(i = 0; i < data.length; ++i){
+                params[i].samplingDiv = {x: j, y: k, z: l};
                 temp[i] = sph.parse(data[i], params[i]);
             }
             // 要素数が同じかどうかチェック
