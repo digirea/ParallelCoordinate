@@ -53,9 +53,9 @@ function ColorMap(canvas, callback){
     this.color_map.addEventListener('dblclick', (function(e){
         var picker = document.getElementById('colorpicker'),
             step_index = this.pick_step(e);
-        picker.click();
-        picker.onchange = (function (evt) {
-            this.color_steps[step_index].color = picker.value;
+        picker.jscolor.show();
+        picker.jscolor.onFineChange = (function () {
+            this.color_steps[step_index].color = picker.jscolor.toRGBString();
             this.draw_color_map(this.context, this.grad_param, this.color_steps);
             this.send_colormap_change_event(this.color_steps);
         }).bind(this);

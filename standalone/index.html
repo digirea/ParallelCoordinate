@@ -8,6 +8,7 @@
         <script src="./javascripts/lib/colormap.js"></script>
         <script src="./javascripts/lib/glutil.js"></script>
         <script src="./javascripts/lib/sphLoader.js"></script>
+        <script src="./javascripts/lib/jscolor.js"></script>
         <script src="./javascripts/script.js"></script>
     </head>
     <body>
@@ -15,7 +16,7 @@
             <div id="container"></div>
             <div id="pickercontainer">
                 <canvas id="pickercanvas"></canvas>
-                <input type="color" id="colorpicker">
+                <button id="colorpicker" class="jscolor {position:'left'}"></button>
             </div>
         </div>
         <div id="ui_layer">
@@ -31,11 +32,11 @@
                 <div class="cols">
                     <p class="html5lp">
                         <span class="labels">lines</span>
-                        <input id="lineColor1" class="html5jp-cpick [coloring:true]" type="text" value="#FFFFFF">
+                        <input id="lineColor1" class="jscolor {position:'top'}" value="#E54C99">
                     </p>
                     <p class="html5lp">
                         <span class="labels">selected</span>
-                        <input id="lineColor2" class="html5jp-cpick [coloring:true]" type="text" value="#CCCCCC">
+                        <input id="lineColor2" class="jscolor {position:'top'}" value="#4CE599">
                     </p>
                 </div>
             </div>

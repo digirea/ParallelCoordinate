@@ -47,6 +47,10 @@
             redraw();
         });
 
+        // 20160516
+        // jscolor first
+        //
+
         window.addEventListener('resize', windowResize, false);
         windowResize();
         function windowResize(eve){
