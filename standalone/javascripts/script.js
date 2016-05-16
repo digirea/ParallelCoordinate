@@ -76,7 +76,8 @@
         function dimEneter(eve){
             if(eve.keyCode === 13){dimUpdate(eve);}
         }
-
+        document.getElementById('lineColor1').addEventListener('change', redraw, false);
+        document.getElementById('lineColor2').addEventListener('change', redraw, false);
 
         // SPH は複数許可、CSV なら単体ファイルしか受け付けない
         // SPH の場合は包含する component の要素数を考慮して合計値が複数になれば描画

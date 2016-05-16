@@ -70,6 +70,10 @@ a {
     flex-direction: row;
 }
 
+.cols p {
+    display: inline-block;
+}
+
 #minmax {
     background-color: #333;
     width: 100%;
@@ -101,6 +105,7 @@ a {
 .info {
     padding: 15px;
     width: 500px;
+    display: inline-block;
 }
 
 #samplingdiv {
