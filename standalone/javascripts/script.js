@@ -117,7 +117,7 @@
                                             begin();
                                         }
                                     }else{
-                                        console.log('invalid file!');
+                                        infoArea('warn', 'csv file be single');
                                         return;
                                     }
                                 };
@@ -140,37 +140,31 @@
                 for(i = 1; i < fileLength; ++i){
                     f = f && (g === flg[i]);
                 }
-                if(f){
-                    if(issph){
-                        // type sph
-                        if(colcount > 1){
-                            targetData = convertSPH(data, params);
-                        }else{
-                            console.log('please multiple select files');
-                            return;
-                        }
+                targetData = null;
+                if(issph){
+                    // type sph
+                    if(f && colcount > 1){
+                        targetData = convertSPH(data, params);
+                        infoArea('samplingdiv', null);
                     }else{
-                        // type csv
-                        if(!g && fileLength === 1){
-                            targetData = convertCSV(data[0]);
-                        }else{
-                            console.log('please select single csv');
-                            return;
-                        }
-                    }
-                    if(!targetData){
-                        console.log('null data');
+                        infoArea('warn', 'column count error');
                         return;
                     }
-                    useAxes();
-                    setTimeout(function(){
-                        var e = document.createElement('script');
-                        document.body.appendChild(e);
-                        e.src = './javascripts/lib/cpick.js';
-                    }, 100);
                 }else{
-                    console.log('invalid file type');
+                    // type csv
+                    if(!g && fileLength === 1){
+                        targetData = convertCSV(data[0]);
+                        infoArea('info', 'csv file');
+                    }else{
+                        infoArea('warn', 'must be single csv select');
+                        return;
+                    }
                 }
+                if(!targetData){
+                    infoArea('warn', 'invalid data');
+                    return;
+                }
+                useAxes();
             }
         }
 
@@ -291,7 +285,11 @@
             beginDraw(targetData);
 
             function beginDraw(data){
-                if(data.length < 3){console.log('invalid data:' + data); return;}
+                if(data.length < 3){
+                    infoArea('warn', 'error!');
+                    console.log('invalid data:' + data);
+                    return;
+                }
                 dataval = [];
                 if(Array.isArray(data[0])){ // csv 先頭行がタイトルではない
                     for(i = 0, j = data.length; i < j; ++i){
@@ -815,6 +813,31 @@
         }
 
     }, false);
+
+    function infoArea(mode, text){
+        var e = document.getElementById('info');
+        var f = document.getElementById('samplingdiv');
+        switch(mode){
+            case 'info':
+                e.textContent = text;
+                e.style.color = 'white';
+                e.style.display = 'block';
+                f.style.display = 'none';
+                break;
+            case 'warn':
+                e.textContent = text;
+                e.style.color = 'deeppink';
+                e.style.display = 'block';
+                f.style.display = 'none';
+                break;
+            case 'samplingdiv':
+                e.textContent = '';
+                e.style.color = 'white';
+                e.style.display = 'none';
+                f.style.display = 'block';
+                break;
+        }
+    }
 
     function zeroPadding(n, c){
         return (new Array(c + 1).join('0') + n).slice(-c);

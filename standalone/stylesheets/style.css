@@ -96,4 +96,16 @@ a {
     min-width: 100px;
 }
 
+#info {}
+
+.info {
+    padding: 15px;
+    width: 500px;
+}
+
+#samplingdiv {
+    display: none;
+}
+
+
 
