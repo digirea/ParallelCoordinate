@@ -462,7 +462,7 @@
 
                 if(glContext[name] == null){
                     glContext[name] = {
-                        gl: c.getContext('webgl'),
+                        gl: c.getContext('webgl') || c.getContext('experimental-webgl'),
                         color: [0.2, 0.2, 0.2, 0.1],
                         pl: new prgLocations(),
                         plp: new prgLocations(),
