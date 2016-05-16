@@ -47,10 +47,6 @@
             redraw();
         });
 
-        // 20160516
-        // jscolor first
-        //
-
         window.addEventListener('resize', windowResize, false);
         windowResize();
         function windowResize(eve){
@@ -82,6 +78,7 @@
         // SPH は複数許可、CSV なら単体ファイルしか受け付けない
         // SPH の場合は包含する component の要素数を考慮して合計値が複数になれば描画
         function fileUpload(evt){
+            reset();
             if(!evt.target.files && evt.target.files.length < 1){return;}
             var i;
             var fileLength = evt.target.files.length;
@@ -328,6 +325,7 @@
                     .brushMode("1D-axes") // 抽出のやり方
                     .interactive();       // 常時更新
 
+                document.getElementById('glforeground').style.display = '';
                 // minmax
                 minmaxDOM();
             }
@@ -403,11 +401,13 @@
                 glRender: glRender,
                 param: dataparam
             };
-            reset();
+            // reset();
         }
 
         function reset(){
             var e = document.getElementById('example');
+            var f = document.getElementById('glforeground');
+            if(f){f.style.display = 'none';}
             if(e){
                 var tmp = document.createElement('div');
                 tmp.style.display = 'none';
