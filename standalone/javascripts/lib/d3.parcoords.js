@@ -182,8 +182,6 @@ d3.parcoords = function(config) {
             "number": function(k) {
                 var extent = d3.extent(__.data, function(d) { return +d[k]; });
 
-                console.log(extent);
-
                 // minmax 設定してるのここ
                 if(config.usr.param &&
                    config.usr.param[k].min !== null && config.usr.param[k].min !== undefined &&
