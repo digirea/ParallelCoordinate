@@ -66,6 +66,7 @@
             var i = eve.currentTarget.value;
             if(i && !isNaN(i) && i > 0 && issph){
                 targetData = convertSPH(data, params);
+                reset();
                 useAxes();
             }
         }
