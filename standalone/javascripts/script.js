@@ -385,7 +385,10 @@
             f = document.getElementById('max_' + i);
             if(e){dataparam[i].min = e.value;}
             if(f){dataparam[i].max = f.value;}
-            if(prev.prevType != null){useAxes();}
+            if(prev.prevType != null){
+                reset();
+                useAxes();
+            }
         }
 
         function inputEnter(eve){
