@@ -73,7 +73,8 @@ d3.parcoords = function(config) {
     yscale = {},
     dragging = {},
     line = d3.svg.line(),
-    axis = d3.svg.axis().orient("left").ticks(5),
+    // axis = d3.svg.axis().orient("left").ticks(5),
+    axis = d3.svg.axis().orient("left").ticks(10, 0),
     g, // groups for axes, brushes
     ctx = {},
     canvas = {},
@@ -181,6 +182,8 @@ d3.parcoords = function(config) {
             "number": function(k) {
                 var extent = d3.extent(__.data, function(d) { return +d[k]; });
 
+                console.log(extent);
+
                 // minmax 設定してるのここ
                 if(config.usr.param &&
                    config.usr.param[k].min !== null && config.usr.param[k].min !== undefined &&
@@ -198,7 +201,8 @@ d3.parcoords = function(config) {
                 // log scale するとしたらここ（真偽値で厳密チェックする
                 if(config.usr.logScale === true){
                     return d3.scale.log()
-                    .domain(extent)
+                    // .domain(extent)
+                    .domain([0.001, 1000])
                     .range([h()+1, 1]);
                 }else{
                     return d3.scale.linear()

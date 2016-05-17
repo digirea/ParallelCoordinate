@@ -40,7 +40,10 @@
         var fileInput = document.getElementById('file');
         fileInput.addEventListener('change', fileUpload, false);
         var logScale = document.getElementById('logScale');
-        logScale.addEventListener('change', function(){if(prev.prevType != null){useAxes();}}, false);
+        logScale.addEventListener('change', function(){if(prev.prevType != null){
+            reset();
+            useAxes();
+        }}, false);
 
         new ColorMap(document.getElementById('pickercanvas'), function(e){
             colormap = e;
