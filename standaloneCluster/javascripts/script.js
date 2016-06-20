@@ -3,6 +3,15 @@
     'use strict';
 
     var NS_SVG = 'http://www.w3.org/2000/svg';
+    var NS = function(e){return document.createElementNS(NS_SVG, e);};
+
+    var SVG_TEXT_BASELINE = 30;    // svg にタイトルテキスト書くときのベースラインのトップからの距離
+    var SVG_TEXT_SIZE = 'medium';  // svg に書くタイトルテキストのフォントサイズ
+    var SVG_SCALE_SIZE = 'small';  // svg で目盛り書くときのフォントサイズ
+    var AXIS_LINE_WIDTH = 2;       // 軸の線の太さ
+    var AXIS_LINE_COLOR = '#333';  // 軸の線の色
+    var AXIS_SCALE_WIDTH = 3;      // 軸の目盛線の横方向に伸びる量
+
     var sph = new SPHLoader();
     var issph = null;
 
@@ -14,36 +23,41 @@
         var canvas = document.getElementById('canvas');
         var svgLayer = document.getElementById('svgLayer');
 
-        var svg = document.createElementNS(NS_SVG, 'svg');
-        var path = document.createElementNS(NS_SVG, 'path');
-        var text = document.createElementNS(NS_SVG, 'text');
-        path.setAttribute('stroke', 'red');
-        path.setAttribute('stroke-width', '2');
-        path.setAttribute('d', 'M 0 0 L 100 100 L 120 120 z');
-        text.setAttribute('x', '20');
-        text.setAttribute('y', '20');
-        text.textContent = 'test';
-
-        svg.appendChild(path);
-        svg.appendChild(text);
+        var svg = setAxisAttribute(svgLayer, document.createElementNS(NS_SVG, 'svg'), 100, 'test');
         svgLayer.appendChild(svg);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        // svg util
+        function setAxisAttribute(parentElement, svg, h, title){
+            var path = null;
+            var text = null;
+            var bbox = null;
+            var svgWidth = 0;
+            var svgHeight = 0;
+            var centerH = 0;
+            if(!svg || !h || !title){return;}
+            // reset svg
+            svg.innerHTML = '';
+            // title text
+            text = NS('text');
+            text.textContent = title;
+            text.setAttribute('color', AXIS_LINE_COLOR);
+            text.setAttribute('x', 0);
+            text.setAttribute('y', SVG_TEXT_BASELINE);
+            svg.appendChild(text);
+            parentElement.appendChild(svg);
+            // get bbox and set size
+            bbox = text.getBBox();
+            svgWidth = bbox.width;
+            svgHeight = h;
+            centerH = svgWidth / 2;
+            // path
+            path = NS('path');
+            path.setAttribute('stroke', AXIS_LINE_COLOR);
+            path.setAttribute('stroke-width', AXIS_LINE_WIDTH);
+            path.setAttribute('d', 'M ' + centerH + ' ' + SVG_TEXT_BASELINE + ' v ' + (svgHeight - SVG_TEXT_BASELINE));
+            svg.appendChild(path);
+            return svg;
+        }
 
 
 
