@@ -2,6 +2,7 @@
 (function(global){
     'use strict';
 
+    var NS_SVG = 'http://www.w3.org/2000/svg';
     var sph = new SPHLoader();
     var issph = null;
 
@@ -9,6 +10,44 @@
         window.addEventListener('resize', windowResize, false);
         windowResize();
         function windowResize(eve){}
+
+        var canvas = document.getElementById('canvas');
+        var svgLayer = document.getElementById('svgLayer');
+
+        var svg = document.createElementNS(NS_SVG, 'svg');
+        var path = document.createElementNS(NS_SVG, 'path');
+        var text = document.createElementNS(NS_SVG, 'text');
+        path.setAttribute('stroke', 'red');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('d', 'M 0 0 L 100 100 L 120 120 z');
+        text.setAttribute('x', '20');
+        text.setAttribute('y', '20');
+        text.textContent = 'test';
+
+        svg.appendChild(path);
+        svg.appendChild(text);
+        svgLayer.appendChild(svg);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         // util
         function zeroPadding(n, c){

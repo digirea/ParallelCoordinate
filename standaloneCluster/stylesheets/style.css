@@ -2,20 +2,20 @@
     margin: 0; padding: 0;
 }
 html, body {
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
     width: 100%;
     height: 100%;
-    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    overflow: auto;
 }
 
 a {
     color: #00B7FF;
 }
 
-#wrap {
+#wrap, #canvas, #svgLayer {
+    position: fixed;
+    width: 100%;
+    height: 100%;
 }
-
-#container {
-}
-
 
 
