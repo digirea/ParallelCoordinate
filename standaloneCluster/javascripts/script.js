@@ -88,18 +88,33 @@
         this.centerH = 0;
         this.bbox = null;
         this.parent.appendChild(this.svg);
+        this.listeners = [];
         this.reset();
     }
     Axis.prototype.reset = function(titleString){
         var path = null;
         var text = null;
         var title = titleString;
+        var funcDown = this.dragStart.bind(this);
+        var funcMove = this.dragMove.bind(this);
+        var funcUp   = this.dragEnd.bind(this);
         if(!titleString){title = this.title;}
+        if(this.listeners.length > 0){
+            this.listeners[0]();
+            this.listeners[1]();
+            this.listeners[2]();
+            this.listeners = [];
+        }
         this.svg.innerHTML = '';
         text = NS('text');
-        text.addEventListener('mousedown', this.dragStart.bind(this), false);
-        this.parent.addEventListener('mousemove', this.dragMove.bind(this), false);
-        this.parent.addEventListener('mouseup', this.dragEnd.bind(this), false);
+        text.addEventListener('mousedown', funcDown, false);
+        this.parent.addEventListener('mousemove', funcMove, false);
+        this.parent.addEventListener('mouseup', funcUp, false);
+        this.listeners.push(
+            (function(){return function(){text.removeEventListener('mousedown', funcDown, false);};}()),
+            (function(){return function(){this.parent.removeEventListener('mousemove', funcMove, false);};}()),
+            (function(){return function(){this.parent.removeEventListener('mouseup', funcUp, false);};}())
+        );
         text.textContent = title;
         text.setAttribute('color', AXIS_LINE_COLOR);
         text.setAttribute('x', 0);
