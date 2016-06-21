@@ -28,11 +28,12 @@
         parallel = new ParallelCoordinate(document.getElementById('wrap'));
         // addAxis で軸を追加でき、タイトルと minmax を初期値として持たせられる
         // resetAxis は与えられた矩形領域に均等に軸を配置し直す
+        // Axis class の reset とは目的が違うので注意
+        // ※ Axis.reset はタイトルや minmax を変更して軸を再描画する
         parallel.addAxis('test1', [-10.0, 10.0])
                 .addAxis('test2', [ 0.0,   1.0])
                 .addAxis('test3', [-0.2,  -0.1])
                 .resetAxis();
-        window.addEventListener('dblclick', parallel.resetAxis.bind(parallel), false);
     }, false);
 
     // parallel ===============================================================
@@ -58,7 +59,7 @@
         this.parent.appendChild(this.layer);
     }
     ParallelCoordinate.prototype.addAxis = function(titleString, minmax){
-        this.axisArray.push(new Axis(this.layer, titleString, minmax));
+        this.axisArray.push(new Axis(this, titleString, minmax));
         this.axisCount = this.axisArray.length;
         return this;
     };
@@ -75,8 +76,8 @@
     };
 
     // axis ===================================================================
-    function Axis(parentElement, titleString, minmax){
-        this.parent = parentElement;
+    function Axis(parent, titleString, minmax){
+        this.parent = parent;
         this.title = titleString;
         this.svg = document.createElementNS(NS_SVG, 'svg');
         this.min = minmax[0];
@@ -87,18 +88,25 @@
         this.onDrag = false;
         this.centerH = 0;
         this.bbox = null;
-        this.parent.appendChild(this.svg);
+        this.parent.layer.appendChild(this.svg);
         this.listeners = [];
         this.reset();
     }
-    Axis.prototype.reset = function(titleString){
+    Axis.prototype.reset = function(titleString, minmax){
         var path = null;
         var text = null;
         var title = titleString;
         var funcDown = this.dragStart.bind(this);
         var funcMove = this.dragMove.bind(this);
         var funcUp   = this.dragEnd.bind(this);
-        if(!titleString){title = this.title;}
+        if(titleString){
+            this.title = titleString;
+        }else{
+            title = this.title;
+        }
+        if(minmax && minmax.hasOwnProperty('length') && minmax.length > 0){
+            this.setMinMax(minmax[0], minmax[1]);
+        }
         if(this.listeners.length > 0){
             this.listeners[0]();
             this.listeners[1]();
@@ -108,12 +116,12 @@
         this.svg.innerHTML = '';
         text = NS('text');
         text.addEventListener('mousedown', funcDown, false);
-        this.parent.addEventListener('mousemove', funcMove, false);
-        this.parent.addEventListener('mouseup', funcUp, false);
+        this.parent.layer.addEventListener('mousemove', funcMove, false);
+        this.parent.layer.addEventListener('mouseup', funcUp, false);
         this.listeners.push(
             (function(){return function(){text.removeEventListener('mousedown', funcDown, false);};}()),
-            (function(){return function(){this.parent.removeEventListener('mousemove', funcMove, false);};}()),
-            (function(){return function(){this.parent.removeEventListener('mouseup', funcUp, false);};}())
+            (function(){return function(){this.parent.layer.removeEventListener('mousemove', funcMove, false);};}()),
+            (function(){return function(){this.parent.layer.removeEventListener('mouseup', funcUp, false);};}())
         );
         text.textContent = title;
         text.setAttribute('color', AXIS_LINE_COLOR);
@@ -123,7 +131,7 @@
         this.svg.appendChild(text);
         this.bbox = text.getBBox();
         this.width = this.bbox.width;
-        this.height = this.parent.clientHeight - PARALLEL_PADDING * 2;
+        this.height = this.parent.layer.clientHeight - PARALLEL_PADDING * 2;
         this.centerH = this.width / 2;
         this.svg.style.position = 'relative';
         this.svg.style.top = PARALLEL_PADDING;
@@ -198,6 +206,7 @@
     };
     Axis.prototype.dragEnd = function(eve){
         this.onDrag = false;
+        setTimeout(this.parent.resetAxis.bind(this.parent), 300);
     };
 
     // cluster ================================================================
