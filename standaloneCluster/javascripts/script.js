@@ -35,7 +35,6 @@
         window.addEventListener('resize', function(){
             parallel.resetAxis.bind(parallel)();
         }, false);
-
     }, false);
 
     // parallel ===============================================================
@@ -62,10 +61,10 @@
 
         this.ctx = this.canvas.getContext('2d');
         var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
-        var h = this.parent.clientHeight - PARALLEL_PADDING * 2;
+        var h = this.parent.clientHeight - PARALLEL_PADDING * 2 - SVG_TEXT_BASELINE;
         this.ctx.fillStyle = 'green';
         this.ctx.beginPath();
-        this.ctx.rect(PARALLEL_PADDING, PARALLEL_PADDING, w, h);
+        this.ctx.rect(PARALLEL_PADDING, PARALLEL_PADDING + SVG_TEXT_BASELINE, w, h);
         this.ctx.closePath();
         this.ctx.fill();
     }
@@ -87,12 +86,12 @@
         }
         // temp
         var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
-        var h = this.parent.clientHeight - PARALLEL_PADDING * 2;
+        var h = this.parent.clientHeight - PARALLEL_PADDING * 2 - SVG_TEXT_BASELINE;
         this.canvas.width = this.parent.clientWidth;
         this.canvas.height = this.parent.clientHeight;
         this.ctx.fillStyle = 'green';
         this.ctx.beginPath();
-        this.ctx.rect(PARALLEL_PADDING, PARALLEL_PADDING, w, h);
+        this.ctx.rect(PARALLEL_PADDING, PARALLEL_PADDING + SVG_TEXT_BASELINE, w, h);
         this.ctx.closePath();
         this.ctx.fill();
         // temp
@@ -181,7 +180,6 @@
         this.min = min;
         this.max = max;
     };
-    Axis.prototype.update = function(){};
     Axis.prototype.drawScale = function(){
         var i, j, k, l;
         var text, path, bbox;
