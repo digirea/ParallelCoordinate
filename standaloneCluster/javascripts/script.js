@@ -244,6 +244,34 @@
         var p = Math.pow(10 , n) ;
         return Math.round(number * p) / p;
     }
+    function bezier(t, p0, p1, p2, p3){
+        var x = (1 - t) * (1 - t) * (1 - t) * p0[0] +
+                3 * (1 - t) * (1 - t) * t * p1[0] +
+                3 * (1 - t) * t * t * p2[0] +
+                t * t * t * p3[0];
+        var y = (1 - t) * (1 - t) * (1 - t) * p0[1] +
+                3 * (1 - t) * (1 - t) * t * p1[1] +
+                3 * (1 - t) * t * t * p2[1] +
+                t * t * t * p3[1];
+        return [x, y];
+    }
+    function gauss(length, power){
+        var i, r, t, w;
+        var weight = [];
+        t = 0.0;
+        for(i = 0; i < length; i++){
+            r = 1.0 + 2.0 * i;
+            w = Math.exp(-0.5 * (r * r) / power);
+            weight[i] = w;
+            if(i > 0){w *= 2.0;}
+            t += w;
+        }
+        for(i = 0; i < weight.length; i++){
+            weight[i] /= t;
+        }
+        return weight;
+    }
+
 
     // sph ====================================================================
     // SPH は複数許可、CSV なら単体ファイルしか受け付けない
