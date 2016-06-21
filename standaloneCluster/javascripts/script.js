@@ -24,7 +24,10 @@
         function windowResize(eve){}
 
         parallel = new ParallelCoordinate(document.getElementById('wrap'));
-        parallel.addAxis('test');
+        parallel.addAxis('test1')
+                // .addAxis('test2')
+                // .addAxis('test3')
+                .resetAxis();
     }, false);
 
     // parallel ===============================================================
@@ -45,13 +48,16 @@
         this.layer = document.createElement('div');
         this.layer.style.width = '100%';
         this.layer.style.height = '100%';
+        this.layer.style.position = 'relative';
         this.parent.appendChild(this.canvas);
         this.parent.appendChild(this.layer);
     }
     ParallelCoordinate.prototype.addAxis = function(titleString){
         this.axisArray.push(new Axis(this.layer, titleString));
         this.axisCount = this.axisArray.length;
-
+        return this;
+    };
+    ParallelCoordinate.prototype.resetAxis = function(){
     };
     // axis ===================================================================
     function Axis(parentElement, titleString){
@@ -61,6 +67,8 @@
         this.parent.appendChild(this.svg);
         this.width = 0;
         this.height = 0;
+        this.left = 0;
+        this.onDrag = false;
         this.bbox = null;
         this.reset();
     }
@@ -72,10 +80,14 @@
         if(!titleString){title = this.title;}
         this.svg.innerHTML = '';
         text = NS('text');
+        text.addEventListener('mousedown', this.dragStart.bind(this), false);
+        this.parent.addEventListener('mousemove', this.dragMove.bind(this), false);
+        this.parent.addEventListener('mouseup', this.dragEnd.bind(this), false);
         text.textContent = title;
         text.setAttribute('color', AXIS_LINE_COLOR);
         text.setAttribute('x', 0);
         text.setAttribute('y', SVG_TEXT_BASELINE - 5);
+        text.style.cursor = 'pointer';
         this.svg.appendChild(text);
         this.bbox = text.getBBox();
         this.width = this.bbox.width;
@@ -86,7 +98,6 @@
         this.svg.style.left = PARALLEL_PADDING - centerH;
         this.svg.style.width = this.width;
         this.svg.style.height = this.height;
-        // path
         path = NS('path');
         path.setAttribute('stroke', AXIS_LINE_COLOR);
         path.setAttribute('stroke-width', AXIS_LINE_WIDTH);
@@ -97,6 +108,20 @@
         this.svg.appendChild(path);
     };
     Axis.prototype.update = function(){};
+    Axis.prototype.dragStart = function(eve){
+        this.left = eve.pageX;
+        this.onDrag = true;
+    };
+    Axis.prototype.dragMove = function(eve){
+        if(!this.onDrag){return;}
+        var x = eve.pageX - this.left;
+        var df = parseFloat(this.svg.style.left.replace(/px$/, ''));
+        this.svg.style.left = (df + x) + 'px';
+        this.left = eve.pageX;
+    };
+    Axis.prototype.dragEnd = function(eve){
+        this.onDrag = false;
+    };
     // cluster ================================================================
     function Cluster(){
     }

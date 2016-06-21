@@ -12,6 +12,18 @@ a {
     color: #00B7FF;
 }
 
+svg {
+    position: relative;
+    transition: top 0.1s ease-out, bottom 0.1s ease-out, left 0.1s ease-out, right 0.1s ease-out;
+}
+
+svg text {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
 #wrap {
     position: fixed;
     width: 100%;
