@@ -12,7 +12,7 @@ a {
     color: #00B7FF;
 }
 
-#wrap, #canvas, #svgLayer {
+#wrap {
     position: fixed;
     width: 100%;
     height: 100%;
