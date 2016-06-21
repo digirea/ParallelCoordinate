@@ -6,6 +6,7 @@
     var NS = function(e){return document.createElementNS(NS_SVG, e);};
 
     var PARALLEL_PADDING = 100;    // 対象エリアのパディング
+    var SVG_DEFAULT_WIDTH = 30;    // 軸のデフォルトの幅
     var SVG_TEXT_BASELINE = 30;    // svg にタイトルテキスト書くときのベースラインのトップからの距離
     var SVG_TEXT_SIZE = 'medium';  // svg に書くタイトルテキストのフォントサイズ
     var SVG_SCALE_SIZE = 'small';  // svg で目盛り書くときのフォントサイズ
@@ -25,9 +26,10 @@
 
         parallel = new ParallelCoordinate(document.getElementById('wrap'));
         parallel.addAxis('test1')
-                // .addAxis('test2')
-                // .addAxis('test3')
+                .addAxis('test2')
+                .addAxis('test3')
                 .resetAxis();
+        window.addEventListener('dblclick', parallel.resetAxis.bind(parallel), false);
     }, false);
 
     // parallel ===============================================================
@@ -58,6 +60,14 @@
         return this;
     };
     ParallelCoordinate.prototype.resetAxis = function(){
+        var i, j;
+        var w = this.layer.clientWidth - PARALLEL_PADDING * 2;
+        var space = w - this.axisCount * SVG_DEFAULT_WIDTH;
+        var margin = space / (this.axisCount - 1);
+        for(i = 0; i < this.axisCount; ++i){
+            j = (SVG_DEFAULT_WIDTH / 2) + (margin) * i;
+            this.axisArray[i].setPosition(PARALLEL_PADDING + j);
+        }
     };
     // axis ===================================================================
     function Axis(parentElement, titleString){
@@ -69,13 +79,13 @@
         this.height = 0;
         this.left = 0;
         this.onDrag = false;
+        this.centerH = 0;
         this.bbox = null;
         this.reset();
     }
     Axis.prototype.reset = function(titleString){
         var path = null;
         var text = null;
-        var centerH = 0;
         var title = titleString;
         if(!titleString){title = this.title;}
         this.svg.innerHTML = '';
@@ -92,10 +102,10 @@
         this.bbox = text.getBBox();
         this.width = this.bbox.width;
         this.height = this.parent.clientHeight - PARALLEL_PADDING * 2;
-        centerH = this.width / 2;
+        this.centerH = this.width / 2;
         this.svg.style.position = 'relative';
         this.svg.style.top = PARALLEL_PADDING;
-        this.svg.style.left = PARALLEL_PADDING - centerH;
+        this.svg.style.left = PARALLEL_PADDING - this.centerH + (SVG_DEFAULT_WIDTH / 2);
         this.svg.style.width = this.width;
         this.svg.style.height = this.height;
         path = NS('path');
@@ -103,9 +113,13 @@
         path.setAttribute('stroke-width', AXIS_LINE_WIDTH);
         path.setAttribute(
             'd',
-            'M ' + centerH + ' ' + SVG_TEXT_BASELINE + ' v ' + (this.height - SVG_TEXT_BASELINE)
+            'M ' + this.centerH + ' ' + SVG_TEXT_BASELINE + ' v ' + (this.height - SVG_TEXT_BASELINE)
         );
         this.svg.appendChild(path);
+    };
+    Axis.prototype.setPosition = function(x){
+        // x === path element left
+        this.svg.style.left = x - this.centerH;
     };
     Axis.prototype.update = function(){};
     Axis.prototype.dragStart = function(eve){
