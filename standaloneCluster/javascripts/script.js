@@ -20,10 +20,6 @@
     var issph = null;
 
     window.addEventListener('load', function(){
-        window.addEventListener('resize', windowResize, false);
-        windowResize();
-        function windowResize(eve){}
-
         // 引数には格納する DOM を指定する
         parallel = new ParallelCoordinate(document.getElementById('wrap'));
         // addAxis で軸を追加でき、タイトルと minmax を初期値として持たせられる
@@ -34,6 +30,12 @@
                 .addAxis('test2', [ 0.0,   1.0])
                 .addAxis('test3', [-0.2,  -0.1])
                 .resetAxis();
+
+        // resize event
+        window.addEventListener('resize', function(){
+            parallel.resetAxis.bind(parallel)();
+        }, false);
+
     }, false);
 
     // parallel ===============================================================
@@ -48,8 +50,8 @@
         this.parent = parentElement;
         this.canvas = document.createElement('canvas');
         this.canvas.style.float = 'left';
-        this.canvas.style.width = '100%';
-        this.canvas.style.height = '100%';
+        this.canvas.width = this.parent.clientWidth;
+        this.canvas.height = this.parent.clientHeight;
         this.canvas.style.position = 'absolute';
         this.layer = document.createElement('div');
         this.layer.style.width = '100%';
@@ -57,6 +59,15 @@
         this.layer.style.position = 'relative';
         this.parent.appendChild(this.canvas);
         this.parent.appendChild(this.layer);
+
+        this.ctx = this.canvas.getContext('2d');
+        var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
+        var h = this.parent.clientHeight - PARALLEL_PADDING * 2;
+        this.ctx.fillStyle = 'green';
+        this.ctx.beginPath();
+        this.ctx.rect(PARALLEL_PADDING, PARALLEL_PADDING, w, h);
+        this.ctx.closePath();
+        this.ctx.fill();
     }
     ParallelCoordinate.prototype.addAxis = function(titleString, minmax){
         this.axisArray.push(new Axis(this, titleString, minmax));
@@ -65,13 +76,27 @@
     };
     ParallelCoordinate.prototype.resetAxis = function(){
         var i, j;
-        var w = this.layer.clientWidth - PARALLEL_PADDING * 2;
-        var space = w - this.axisCount * SVG_DEFAULT_WIDTH;
+        var space = this.layer.clientWidth - PARALLEL_PADDING * 2;
         var margin = space / (this.axisCount - 1);
         for(i = 0; i < this.axisCount; ++i){
-            j = (SVG_DEFAULT_WIDTH / 2) + (margin) * i;
-            this.axisArray[i].setPosition(PARALLEL_PADDING + j);
+            this.axisArray[i].reset();
         }
+        for(i = 0; i < this.axisCount; ++i){
+            j = PARALLEL_PADDING + (margin - SVG_DEFAULT_WIDTH) * i - SVG_DEFAULT_WIDTH / 2;
+            this.axisArray[i].setPosition(j);
+        }
+        // temp
+        var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
+        var h = this.parent.clientHeight - PARALLEL_PADDING * 2;
+        this.canvas.width = this.parent.clientWidth;
+        this.canvas.height = this.parent.clientHeight;
+        this.ctx.fillStyle = 'green';
+        this.ctx.beginPath();
+        this.ctx.rect(PARALLEL_PADDING, PARALLEL_PADDING, w, h);
+        this.ctx.closePath();
+        this.ctx.fill();
+        // temp
+
         return this;
     };
 
@@ -85,12 +110,12 @@
         this.width = 0;
         this.height = 0;
         this.left = 0;
+        this.defaultLeft = 0;
         this.onDrag = false;
         this.centerH = 0;
         this.bbox = null;
         this.parent.layer.appendChild(this.svg);
         this.listeners = [];
-        this.reset();
     }
     Axis.prototype.reset = function(titleString, minmax){
         var path = null;
@@ -108,9 +133,9 @@
             this.setMinMax(minmax[0], minmax[1]);
         }
         if(this.listeners.length > 0){
-            this.listeners[0]();
-            this.listeners[1]();
-            this.listeners[2]();
+            this.listeners[0].bind(this)();
+            this.listeners[1].bind(this)();
+            this.listeners[2].bind(this)();
             this.listeners = [];
         }
         this.svg.innerHTML = '';
@@ -132,12 +157,13 @@
         this.bbox = text.getBBox();
         this.width = this.bbox.width;
         this.height = this.parent.layer.clientHeight - PARALLEL_PADDING * 2;
-        this.centerH = this.width / 2;
+        this.centerH = SVG_DEFAULT_WIDTH / 2;
+        text.setAttribute('x', -(this.width - SVG_DEFAULT_WIDTH) / 2);
         this.svg.style.position = 'relative';
-        this.svg.style.top = PARALLEL_PADDING;
-        this.svg.style.left = PARALLEL_PADDING - this.centerH + (SVG_DEFAULT_WIDTH / 2);
-        this.svg.style.width = this.width;
+        this.svg.style.width = SVG_DEFAULT_WIDTH;
         this.svg.style.height = this.height;
+        this.svg.style.top = PARALLEL_PADDING;
+        this.svg.style.left = PARALLEL_PADDING - (SVG_DEFAULT_WIDTH / 2);
         path = NS('path');
         path.setAttribute('stroke', AXIS_LINE_COLOR);
         path.setAttribute('stroke-width', AXIS_LINE_WIDTH);
@@ -149,8 +175,7 @@
         this.drawScale();
     };
     Axis.prototype.setPosition = function(x){
-        // x === path element left
-        this.svg.style.left = x - this.centerH;
+        this.svg.style.left = x;
     };
     Axis.prototype.setMinMax = function(min, max){
         this.min = min;
