@@ -12,7 +12,7 @@
     var SVG_SCALE_SIZE = 'small';  // svg で目盛り書くときのフォントサイズ
     var AXIS_LINE_WIDTH = 2;       // 軸の線の太さ
     var AXIS_LINE_COLOR = '#333';  // 軸の線の色
-    var AXIS_SCALE_WIDTH = 4;      // 軸の目盛線の横方向に伸びる量
+    var AXIS_SCALE_WIDTH = 5;      // 軸の目盛線の横方向に伸びる量
 
     var parallel;
 
