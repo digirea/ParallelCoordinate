@@ -12,7 +12,7 @@
     var SVG_SCALE_SIZE = 'small';  // svg で目盛り書くときのフォントサイズ
     var AXIS_LINE_WIDTH = 2;       // 軸の線の太さ
     var AXIS_LINE_COLOR = '#333';  // 軸の線の色
-    var AXIS_SCALE_WIDTH = 3;      // 軸の目盛線の横方向に伸びる量
+    var AXIS_SCALE_WIDTH = 4;      // 軸の目盛線の横方向に伸びる量
 
     var parallel;
 
@@ -24,10 +24,13 @@
         windowResize();
         function windowResize(eve){}
 
+        // 引数には格納する DOM を指定する
         parallel = new ParallelCoordinate(document.getElementById('wrap'));
-        parallel.addAxis('test1')
-                .addAxis('test2')
-                .addAxis('test3')
+        // addAxis で軸を追加でき、タイトルと minmax を初期値として持たせられる
+        // resetAxis は与えられた矩形領域に均等に軸を配置し直す
+        parallel.addAxis('test1', [-10.0, 10.0])
+                .addAxis('test2', [ 0.0,   1.0])
+                .addAxis('test3', [-0.2,  -0.1])
                 .resetAxis();
         window.addEventListener('dblclick', parallel.resetAxis.bind(parallel), false);
     }, false);
@@ -54,8 +57,8 @@
         this.parent.appendChild(this.canvas);
         this.parent.appendChild(this.layer);
     }
-    ParallelCoordinate.prototype.addAxis = function(titleString){
-        this.axisArray.push(new Axis(this.layer, titleString));
+    ParallelCoordinate.prototype.addAxis = function(titleString, minmax){
+        this.axisArray.push(new Axis(this.layer, titleString, minmax));
         this.axisCount = this.axisArray.length;
         return this;
     };
@@ -68,19 +71,23 @@
             j = (SVG_DEFAULT_WIDTH / 2) + (margin) * i;
             this.axisArray[i].setPosition(PARALLEL_PADDING + j);
         }
+        return this;
     };
+
     // axis ===================================================================
-    function Axis(parentElement, titleString){
+    function Axis(parentElement, titleString, minmax){
         this.parent = parentElement;
         this.title = titleString;
         this.svg = document.createElementNS(NS_SVG, 'svg');
-        this.parent.appendChild(this.svg);
+        this.min = minmax[0];
+        this.max = minmax[1];
         this.width = 0;
         this.height = 0;
         this.left = 0;
         this.onDrag = false;
         this.centerH = 0;
         this.bbox = null;
+        this.parent.appendChild(this.svg);
         this.reset();
     }
     Axis.prototype.reset = function(titleString){
@@ -96,7 +103,7 @@
         text.textContent = title;
         text.setAttribute('color', AXIS_LINE_COLOR);
         text.setAttribute('x', 0);
-        text.setAttribute('y', SVG_TEXT_BASELINE - 5);
+        text.setAttribute('y', SVG_TEXT_BASELINE - 10);
         text.style.cursor = 'pointer';
         this.svg.appendChild(text);
         this.bbox = text.getBBox();
@@ -116,12 +123,53 @@
             'M ' + this.centerH + ' ' + SVG_TEXT_BASELINE + ' v ' + (this.height - SVG_TEXT_BASELINE)
         );
         this.svg.appendChild(path);
+        this.drawScale();
     };
     Axis.prototype.setPosition = function(x){
         // x === path element left
         this.svg.style.left = x - this.centerH;
     };
+    Axis.prototype.setMinMax = function(min, max){
+        this.min = min;
+        this.max = max;
+    };
     Axis.prototype.update = function(){};
+    Axis.prototype.drawScale = function(){
+        var i, j, k, l;
+        var text, path, bbox;
+        var smin, smax;
+        var range = this.max - this.min;
+        var scale = range / 10;
+        if(this.min % scale === 0){
+            smin = this.min;
+        }else{
+            smin = this.min + scale - (this.min % scale);
+        }
+        if(this.max % scale === 0){
+            smax = this.max;
+        }else{
+            smax = this.max - (this.min % scale);
+        }
+        l = this.svg.clientHeight - SVG_TEXT_BASELINE;
+        for(i = this.min; i <= smax; i += scale){
+            text = NS('text');
+            text.style.fontSize = SVG_SCALE_SIZE;
+            text.textContent = '' + formatFloat(i, 5);
+            this.svg.appendChild(text);
+            bbox = text.getBBox();
+            j = bbox.width - (SVG_DEFAULT_WIDTH / 2) + AXIS_SCALE_WIDTH + 2;
+            k = this.svg.clientHeight - ((i - this.min) / (smax - this.min)) * l;
+            text.style.transform = 'translate(' + -j + 'px, ' + (k + 5) + 'px)';
+            path = NS('path');
+            path.setAttribute('stroke', AXIS_LINE_COLOR);
+            path.setAttribute('stroke-width', AXIS_LINE_WIDTH);
+            path.setAttribute(
+                'd',
+                'M ' + this.centerH + ' ' + k + ' h ' + -AXIS_SCALE_WIDTH
+            );
+            this.svg.appendChild(path);
+        }
+    };
     Axis.prototype.dragStart = function(eve){
         this.left = eve.pageX;
         this.onDrag = true;
@@ -136,6 +184,7 @@
     Axis.prototype.dragEnd = function(eve){
         this.onDrag = false;
     };
+
     // cluster ================================================================
     function Cluster(){
     }
@@ -143,6 +192,10 @@
     // util ===================================================================
     function zeroPadding(n, c){
         return (new Array(c + 1).join('0') + n).slice(-c);
+    }
+    function formatFloat(number, n) {
+        var p = Math.pow(10 , n) ;
+        return Math.round(number * p) / p;
     }
 
     // sph ====================================================================

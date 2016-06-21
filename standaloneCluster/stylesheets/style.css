@@ -14,6 +14,7 @@ a {
 
 svg {
     position: relative;
+    overflow: visible;
     transition: top 0.1s ease-out, bottom 0.1s ease-out, left 0.1s ease-out, right 0.1s ease-out;
 }
 
@@ -22,6 +23,7 @@ svg text {
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
+    cursor: default;
 }
 
 #wrap {
