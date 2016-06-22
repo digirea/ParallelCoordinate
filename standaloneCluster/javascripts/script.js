@@ -46,7 +46,7 @@
 
         // axis initialize
         for(i = 0, j = json.axis.length; i < j; ++i){
-            parallel.addAxis(json.axis[i]);
+            parallel.addAxis(json.axis[i], i);
         }
         parallel.resetAxis();
 
@@ -90,8 +90,8 @@
         this.drawRect = this.getDrawRect();
     }
     // axis
-    ParallelCoordinate.prototype.addAxis = function(axisData){
-        this.axisArray.push(new Axis(this, axisData));
+    ParallelCoordinate.prototype.addAxis = function(axisData, index){
+        this.axisArray.push(new Axis(this, index, axisData));
         this.axisCount = this.axisArray.length;
         return this;
     };
@@ -105,6 +105,9 @@
         for(i = 0; i < this.axisCount; ++i){
             j = PARALLEL_PADDING + (margin - SVG_DEFAULT_WIDTH) * i - SVG_DEFAULT_WIDTH / 2;
             this.axisArray[i].setPosition(j);
+        }
+        if(this.glReady){
+            this.drawCanvas();
         }
         return this;
     };
@@ -143,21 +146,25 @@
             color:  gl.getUniformLocation(this.prg, 'color')
         };
         var position = [
-            -100.0,  100.0,  0.0,
-            -100.0, -100.0,  0.0,
-             100.0,  100.0,  0.0,
-             100.0, -100.0,  0.0
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0,
+            1.0, 1.0, 0.0,
+            1.0, 0.0, 0.0
         ];
         var vPosition = create_vbo(gl, position);
         this.vboList = [vPosition];
 
     };
     ParallelCoordinate.prototype.drawCanvas = function(){
+        var i, j, k, l;
+        var v, w, x, y;
         var gl = this.gl;
         var mat = this.mat;
         var vMatrix  = mat.identity(mat.create());
         var pMatrix  = mat.identity(mat.create());
         var vpMatrix = mat.identity(mat.create());
+        this.canvas.width = this.parent.clientWidth;
+        this.canvas.height = this.parent.clientHeight;
         this.drawRect = this.getDrawRect();
         mat.lookAt(
             [0.0, 0.0, 1.0],
@@ -180,12 +187,34 @@
         gl.clearColor(1.0, 1.0, 1.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        gl.uniformMatrix4fv(this.uniL.matrix, false, vpMatrix);
-        gl.uniform4fv(this.uniL.color, [1.0, 0.2, 0.3, 1.0]);
-
-        set_attribute(gl, this.vboList, this.attL, this.attS);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        if(this.axisArray.length > 1){
+            for(i = 0, j = this.axisArray.length; i < j; ++i){
+                x = this.axisArray[i].getHorizontalRange();
+                for(k = 0, l = this.axisArray[i].clusters.length; k < l; ++k){
+                    v = this.axisArray[i].clusters[k].getNomalizeRange();
+                    w = (this.axisArray[i].height - SVG_TEXT_BASELINE) * v.min;
+                    y = (this.axisArray[i].height - SVG_TEXT_BASELINE) * v.max;
+                    draw.bind(this)(x, x + SVG_DEFAULT_WIDTH, y, w, [1.0 / j * i / 2.0 + 0.5, 1.0 / l * k, 1.0 - 1.0 / l * k, 1.0]);
+                }
+            }
+        }
         gl.flush();
+
+        function draw(left, right, top, bottom, color){
+            var w = left - right;
+            var h = top - bottom;
+            var mMatrix = mat.identity(mat.create());
+            var mvpMatrix = mat.identity(mat.create());
+            mat.translate(mMatrix, [left - w / 2, bottom, 0.0], mMatrix);
+            mat.scale(mMatrix, [w, h, 1.0], mMatrix);
+            mat.multiply(vpMatrix, mMatrix, mvpMatrix);
+
+            gl.uniformMatrix4fv(this.uniL.matrix, false, mvpMatrix);
+            gl.uniform4fv(this.uniL.color, color);
+
+            set_attribute(gl, this.vboList, this.attL, this.attS);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        }
     };
     ParallelCoordinate.prototype.getDrawRect = function(){
         var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
@@ -194,9 +223,10 @@
     };
 
     // axis ===================================================================
-    function Axis(parent, data){
+    function Axis(parent, index, data){
         this.parent = parent;
         this.title = data.title;
+        this.index = index;
         this.svg = document.createElementNS(NS_SVG, 'svg');
         this.min = 0;
         this.max = 0;
@@ -340,6 +370,16 @@
         this.max = l;
         return this;
     };
+    Axis.prototype.getHorizontalRange = function(){
+        // horizon range
+        var i = parseFloat(this.svg.style.left.replace(/px$/));
+        return i + (SVG_DEFAULT_WIDTH / 2) + (this.index * SVG_DEFAULT_WIDTH) - 100;
+    };
+    Axis.prototype.getNomalizeHorizontalRange = function(){
+        // horizon normalize range
+        var i = this.getHorizontalRange();
+        return i / this.parent.drawRect.width;
+    };
     Axis.prototype.dragStart = function(eve){
         this.left = eve.pageX;
         this.onDrag = true;
@@ -367,6 +407,7 @@
         return this;
     }
     Cluster.prototype.getNomalizeRange = function(){
+        // vertical normalize range
         var i = this.parentAxis.max - this.parentAxis.min;
         return {
             min: (this.min - this.parentAxis.min) / i,
