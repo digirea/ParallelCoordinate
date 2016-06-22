@@ -79,7 +79,7 @@
         var space = this.layer.clientWidth - PARALLEL_PADDING * 2;
         var margin = space / (this.axisCount - 1);
         for(i = 0; i < this.axisCount; ++i){
-            this.axisArray[i].reset();
+            this.axisArray[i].update();
         }
         for(i = 0; i < this.axisCount; ++i){
             j = PARALLEL_PADDING + (margin - SVG_DEFAULT_WIDTH) * i - SVG_DEFAULT_WIDTH / 2;
@@ -123,8 +123,9 @@
         this.bbox = null;
         this.parent.layer.appendChild(this.svg);
         this.listeners = [];
+        this.clusters = [];
     }
-    Axis.prototype.reset = function(titleString, minmax){
+    Axis.prototype.update = function(titleString, minmax){
         var path = null;
         var text = null;
         var title = titleString;
@@ -224,6 +225,9 @@
             this.svg.appendChild(path);
         }
     };
+    Axis.prototype.addCluster = function(){
+
+    };
     Axis.prototype.dragStart = function(eve){
         this.left = eve.pageX;
         this.onDrag = true;
@@ -241,8 +245,26 @@
     };
 
     // cluster ================================================================
-    function Cluster(){
+    function Cluster(axis, index, inner, outer, ratio, top, color){
+        this.parentAxis = axis; // 自分自身が所属する軸
+        this.index = index;     // 自分自身のインデックス
+        this.in = inner;        // 自分への入力（配列で、全て足しても 1 になるとは限らない outer の合計値と同じになるはず
+        this.out = outer;       // 自分からの出力（配列で、全て足しても 1 になるとは限らず inner の合計値と同じになるはず
+        this.ratio = ratio;     // 軸に対して占める割合（inner outer の合計値と一致するはず）
+        this.top = top;         // 縦方向の位置（スクリーン座標系の向きで 0 から 1
+        this.color = color;     // 色
+        return this;
     }
+    Cluster.prototype.update = function(){
+        var i, j, v = 0, w = 0;
+        for(i = 0, j = this.in.length; i < j; ++i){
+            v += this.in[i];
+            w += this.out[i];
+        }
+        this.ratio = v;
+        if(v !== w){console.log('invalid cluster value');}
+        return this;
+    };
 
     // util ===================================================================
     function zeroPadding(n, c){
