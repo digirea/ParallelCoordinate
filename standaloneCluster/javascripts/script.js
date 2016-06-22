@@ -225,8 +225,47 @@
             this.svg.appendChild(path);
         }
     };
-    Axis.prototype.addCluster = function(){
-
+    Axis.prototype.addCluster = function(data){
+        var i, j, c;
+        for(i = 0, j = data.length; i < j; ++i){
+            c = new Cluster(
+                this,
+                i,
+                data[i].in,
+                data[i].out,
+                data[i].min,
+                data[i].max,
+                0, 0, [1, 1, 1, 1]
+            );
+            c.update();
+            this.clusters.push(c);
+        }
+        return this;
+    };
+    Axis.prototype.updateCluster = function(){
+        if(this.clusters.length === 0){return;}
+        var i, j, k;
+        k = 0;
+        for(i = 0, j = this.cluster.length; i < j; ++i){
+            this.cluster[i].top = k;
+            k += this.cluster[i].ratio;
+        }
+        return this;
+    };
+    Axis.prototype.getClustersMinMax = function(){
+        if(this.clusters.length === 0){return;}
+        var i, j, k, l;
+        k = l = 0;
+        if(this.clusters.length === 1){
+            k = this.clusters[0].min;
+            l = this.clusters[0].max;
+        }else{
+            for(i = 0, j = this.clusters.length; i < j; ++i){
+                k = Math.min(this.clusters[i].min, k);
+                l = Math.max(this.clusters[i].max, l);
+            }
+        }
+        return this;
     };
     Axis.prototype.dragStart = function(eve){
         this.left = eve.pageX;
@@ -245,16 +284,19 @@
     };
 
     // cluster ================================================================
-    function Cluster(axis, index, inner, outer, ratio, top, color){
+    function Cluster(axis, index, inner, outer, min, max, ratio, top, color){
         this.parentAxis = axis; // 自分自身が所属する軸
         this.index = index;     // 自分自身のインデックス
         this.in = inner;        // 自分への入力（配列で、全て足しても 1 になるとは限らない outer の合計値と同じになるはず
         this.out = outer;       // 自分からの出力（配列で、全て足しても 1 になるとは限らず inner の合計値と同じになるはず
+        this.min = min;         // 自分自身の最小値
+        this.max = max;         // 自分自身の最大値
         this.ratio = ratio;     // 軸に対して占める割合（inner outer の合計値と一致するはず）
         this.top = top;         // 縦方向の位置（スクリーン座標系の向きで 0 から 1
         this.color = color;     // 色
         return this;
     }
+    // 自身の in と out を全加算して ratio を更新する
     Cluster.prototype.update = function(){
         var i, j, v = 0, w = 0;
         for(i = 0, j = this.in.length; i < j; ++i){
