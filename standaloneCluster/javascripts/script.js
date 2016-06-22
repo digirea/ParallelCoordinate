@@ -4,6 +4,8 @@
 
     var NS_SVG = 'http://www.w3.org/2000/svg';
     var NS = function(e){return document.createElementNS(NS_SVG, e);};
+    var sph = new SPHLoader();
+    var issph = null;
 
     var PARALLEL_PADDING = 100;    // 対象エリアのパディング
     var SVG_DEFAULT_WIDTH = 30;    // 軸のデフォルトの幅
@@ -16,17 +18,18 @@
 
     var parallel;
 
-    var sph = new SPHLoader();
-    var issph = null;
-
+    // window onload and json import
     window.addEventListener('load', function(){
-        loadJSON('testdata.json', init);
         // resize event
         window.addEventListener('resize', function(){
             parallel.resetAxis.bind(parallel)();
         }, false);
+
+        // json import
+        loadJSON('testdata.json', init);
     }, false);
 
+    // global initialize
     function init(data){
         var json = JSON.parse(data);
         var i, j;
@@ -48,7 +51,8 @@
         parallel.resetAxis();
 
         // draw canvas
-        parallel.draw();
+        if(!parallel.glReady){return;}
+        parallel.drawCanvas();
     }
 
     // parallel ===============================================================
@@ -78,12 +82,14 @@
         this.glReady = false;
         this.mat = null;
         this.qtn = null;
+        this.drawRect = null;
 
         // canvas initialize
         this.initCanvas();
+        this.resetCanvas();
+        this.drawRect = this.getDrawRect();
     }
     // axis
-    // ParallelCoordinate.prototype.addAxis = function(titleString, minmax){
     ParallelCoordinate.prototype.addAxis = function(axisData){
         this.axisArray.push(new Axis(this, axisData));
         this.axisCount = this.axisArray.length;
@@ -112,7 +118,12 @@
         var gl = this.gl;
         if(!this.mat){this.mat = new matIV();}
         if(!this.qtn){this.qtn = new qtnIV();}
+        this.drawRect = this.getDrawRect();
         
+    };
+    ParallelCoordinate.prototype.drawCanvas = function(){
+        this.drawRect = this.getDrawRect();
+        console.log('draw!');
     };
     ParallelCoordinate.prototype.getDrawRect = function(){
         var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
