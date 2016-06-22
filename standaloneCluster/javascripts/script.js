@@ -116,14 +116,76 @@
     };
     ParallelCoordinate.prototype.resetCanvas = function(){
         var gl = this.gl;
+        var mat = this.mat;
         if(!this.mat){this.mat = new matIV();}
         if(!this.qtn){this.qtn = new qtnIV();}
         this.drawRect = this.getDrawRect();
-        
+
+        var vSource = '';
+        vSource += 'attribute vec3 position;';
+        vSource += 'uniform mat4 matrix;';
+        vSource += 'void main(){';
+        vSource += '    gl_Position = matrix * vec4(position, 1.0);';
+        vSource += '}';
+        var fSource = '';
+        fSource += 'precision mediump float;';
+        fSource += 'uniform vec4 color;';
+        fSource += 'void main(){';
+        fSource += '    gl_FragColor = color;';
+        fSource += '}';
+        var vs = create_shader(gl, vSource, gl.VERTEX_SHADER);
+        var fs = create_shader(gl, fSource, gl.FRAGMENT_SHADER);
+        this.prg = create_program(gl, vs, fs);
+        this.attL = [gl.getAttribLocation(this.prg, 'position')];
+        this.attS = [3];
+        this.uniL = {
+            matrix: gl.getUniformLocation(this.prg, 'matrix'),
+            color:  gl.getUniformLocation(this.prg, 'color')
+        };
+        var position = [
+            -100.0,  100.0,  0.0,
+            -100.0, -100.0,  0.0,
+             100.0,  100.0,  0.0,
+             100.0, -100.0,  0.0
+        ];
+        var vPosition = create_vbo(gl, position);
+        this.vboList = [vPosition];
+
     };
     ParallelCoordinate.prototype.drawCanvas = function(){
+        var gl = this.gl;
+        var mat = this.mat;
+        var vMatrix  = mat.identity(mat.create());
+        var pMatrix  = mat.identity(mat.create());
+        var vpMatrix = mat.identity(mat.create());
         this.drawRect = this.getDrawRect();
-        console.log('draw!');
+        mat.lookAt(
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            vMatrix
+        );
+        mat.ortho(
+            0,
+            this.drawRect.width,
+            this.drawRect.height,
+            0,
+            0.5,
+            1.0,
+            pMatrix
+        );
+        mat.multiply(pMatrix, vMatrix, vpMatrix);
+
+        gl.viewport(this.drawRect.x, this.drawRect.y, this.drawRect.width, this.drawRect.height);
+        gl.clearColor(1.0, 1.0, 1.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.uniformMatrix4fv(this.uniL.matrix, false, vpMatrix);
+        gl.uniform4fv(this.uniL.color, [1.0, 0.2, 0.3, 1.0]);
+
+        set_attribute(gl, this.vboList, this.attL, this.attS);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.flush();
     };
     ParallelCoordinate.prototype.getDrawRect = function(){
         var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
