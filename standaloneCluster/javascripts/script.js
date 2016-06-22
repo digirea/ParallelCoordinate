@@ -20,22 +20,36 @@
     var issph = null;
 
     window.addEventListener('load', function(){
-        // 引数には格納する DOM を指定する
-        parallel = new ParallelCoordinate(document.getElementById('wrap'));
-        // addAxis で軸を追加でき、タイトルと minmax を初期値として持たせられる
-        // resetAxis は与えられた矩形領域に均等に軸を配置し直す
-        // Axis class の reset とは目的が違うので注意
-        // ※ Axis.reset はタイトルや minmax を変更して軸を再描画する
-        parallel.addAxis('test1', [-10.0, 10.0])
-                .addAxis('test2', [ 0.0,   1.0])
-                .addAxis('test3', [-0.2,  -0.1])
-                .resetAxis();
-
+        loadJSON('testdata.json', init);
         // resize event
         window.addEventListener('resize', function(){
             parallel.resetAxis.bind(parallel)();
         }, false);
     }, false);
+
+    function init(data){
+        var json = JSON.parse(data);
+        var i, j;
+
+        // check the data
+        if(!json || !json.hasOwnProperty('axis') || json.axis.length < 2){
+            console.log('invalid data');
+            console.log(json);
+            return;
+        }
+
+        // parallel initialize
+        parallel = new ParallelCoordinate(document.getElementById('wrap'));
+
+        // axis initialize
+        for(i = 0, j = json.axis.length; i < j; ++i){
+            parallel.addAxis(json.axis[i]);
+        }
+        parallel.resetAxis();
+
+        // draw canvas
+        parallel.draw();
+    }
 
     // parallel ===============================================================
     function ParallelCoordinate(parentElement){
@@ -69,8 +83,9 @@
         this.initCanvas();
     }
     // axis
-    ParallelCoordinate.prototype.addAxis = function(titleString, minmax){
-        this.axisArray.push(new Axis(this, titleString, minmax));
+    // ParallelCoordinate.prototype.addAxis = function(titleString, minmax){
+    ParallelCoordinate.prototype.addAxis = function(axisData){
+        this.axisArray.push(new Axis(this, axisData));
         this.axisCount = this.axisArray.length;
         return this;
     };
@@ -96,24 +111,22 @@
     ParallelCoordinate.prototype.resetCanvas = function(){
         var gl = this.gl;
         if(!this.mat){this.mat = new matIV();}
-        if(!this.qtn){this.qtn = new matIV();}
-    };
-    ParallelCoordinate.prototype.updateCanvas = function(){
+        if(!this.qtn){this.qtn = new qtnIV();}
         
     };
     ParallelCoordinate.prototype.getDrawRect = function(){
         var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
         var h = this.parent.clientHeight - PARALLEL_PADDING * 2 - SVG_TEXT_BASELINE;
-        return {width: w, height: h};
+        return {x: PARALLEL_PADDING, y: PARALLEL_PADDING, width: w, height: h};
     };
 
     // axis ===================================================================
-    function Axis(parent, titleString, minmax){
+    function Axis(parent, data){
         this.parent = parent;
-        this.title = titleString;
+        this.title = data.title;
         this.svg = document.createElementNS(NS_SVG, 'svg');
-        this.min = minmax[0];
-        this.max = minmax[1];
+        this.min = 0;
+        this.max = 0;
         this.width = 0;
         this.height = 0;
         this.left = 0;
@@ -121,9 +134,21 @@
         this.onDrag = false;
         this.centerH = 0;
         this.bbox = null;
-        this.parent.layer.appendChild(this.svg);
         this.listeners = [];
         this.clusters = [];
+        var i, j;
+        for(i = 0, j = data.cluster.length; i < j; ++i){
+            this.clusters.push(new Cluster(
+                this,
+                i,
+                data.cluster[i].out,
+                data.cluster[i].min,
+                data.cluster[i].max,
+                [1, 1, 1, 1]
+            ));
+        }
+        this.getClustersMinMax();
+        this.parent.layer.appendChild(this.svg);
     }
     Axis.prototype.update = function(titleString, minmax){
         var path = null;
@@ -195,16 +220,16 @@
         var smin, smax;
         var range = this.max - this.min;
         var scale = range / 10;
-        if(this.min % scale === 0){
+        // if(this.min % scale === 0){
             smin = this.min;
-        }else{
-            smin = this.min + scale - (this.min % scale);
-        }
-        if(this.max % scale === 0){
+        // }else{
+        //     smin = this.min + scale - (this.min % scale);
+        // }
+        // if(this.max % scale === 0){
             smax = this.max;
-        }else{
-            smax = this.max - (this.min % scale);
-        }
+        // }else{
+        //     smax = this.max + (this.max % scale);
+        // }
         l = this.svg.clientHeight - SVG_TEXT_BASELINE;
         for(i = this.min; i <= smax; i += scale){
             text = NS('text');
@@ -225,33 +250,6 @@
             this.svg.appendChild(path);
         }
     };
-    Axis.prototype.addCluster = function(data){
-        var i, j, c;
-        for(i = 0, j = data.length; i < j; ++i){
-            c = new Cluster(
-                this,
-                i,
-                data[i].in,
-                data[i].out,
-                data[i].min,
-                data[i].max,
-                0, 0, [1, 1, 1, 1]
-            );
-            c.update();
-            this.clusters.push(c);
-        }
-        return this;
-    };
-    Axis.prototype.updateCluster = function(){
-        if(this.clusters.length === 0){return;}
-        var i, j, k;
-        k = 0;
-        for(i = 0, j = this.cluster.length; i < j; ++i){
-            this.cluster[i].top = k;
-            k += this.cluster[i].ratio;
-        }
-        return this;
-    };
     Axis.prototype.getClustersMinMax = function(){
         if(this.clusters.length === 0){return;}
         var i, j, k, l;
@@ -265,6 +263,8 @@
                 l = Math.max(this.clusters[i].max, l);
             }
         }
+        this.min = k;
+        this.max = l;
         return this;
     };
     Axis.prototype.dragStart = function(eve){
@@ -284,28 +284,21 @@
     };
 
     // cluster ================================================================
-    function Cluster(axis, index, inner, outer, min, max, ratio, top, color){
+    function Cluster(axis, index, out, min, max, color){
         this.parentAxis = axis; // 自分自身が所属する軸
         this.index = index;     // 自分自身のインデックス
-        this.in = inner;        // 自分への入力（配列で、全て足しても 1 になるとは限らない outer の合計値と同じになるはず
-        this.out = outer;       // 自分からの出力（配列で、全て足しても 1 になるとは限らず inner の合計値と同じになるはず
+        this.out = out;         // 自分からの出力（配列で、全て足して1
         this.min = min;         // 自分自身の最小値
         this.max = max;         // 自分自身の最大値
-        this.ratio = ratio;     // 軸に対して占める割合（inner outer の合計値と一致するはず）
-        this.top = top;         // 縦方向の位置（スクリーン座標系の向きで 0 から 1
         this.color = color;     // 色
         return this;
     }
-    // 自身の in と out を全加算して ratio を更新する
-    Cluster.prototype.update = function(){
-        var i, j, v = 0, w = 0;
-        for(i = 0, j = this.in.length; i < j; ++i){
-            v += this.in[i];
-            w += this.out[i];
-        }
-        this.ratio = v;
-        if(v !== w){console.log('invalid cluster value');}
-        return this;
+    Cluster.prototype.getNomalizeRange = function(){
+        var i = this.parentAxis.max - this.parentAxis.min;
+        return {
+            min: (this.min - this.parentAxis.min) / i,
+            max: 1.0 - (this.parentAxis.max - this.max) / i
+        };
     };
 
     // util ===================================================================
@@ -313,7 +306,7 @@
         return (new Array(c + 1).join('0') + n).slice(-c);
     }
     function formatFloat(number, n) {
-        var p = Math.pow(10 , n) ;
+        var p = Math.pow(10, n);
         return Math.round(number * p) / p;
     }
     function bezier(t, p0, p1, p2, p3){
@@ -344,6 +337,15 @@
         return weight;
     }
 
+    // temp
+    function loadJSON(url, callback){
+        var xml = new XMLHttpRequest();
+        xml.open('GET', url, true);
+        xml.onload = function(){
+            callback(xml.responseText);
+        };
+        xml.send();
+    }
 
     // sph ====================================================================
     // SPH は複数許可、CSV なら単体ファイルしか受け付けない
