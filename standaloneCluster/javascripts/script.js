@@ -59,15 +59,16 @@
         this.parent.appendChild(this.canvas);
         this.parent.appendChild(this.layer);
 
-        this.ctx = this.canvas.getContext('2d');
-        var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
-        var h = this.parent.clientHeight - PARALLEL_PADDING * 2 - SVG_TEXT_BASELINE;
-        this.ctx.fillStyle = 'green';
-        this.ctx.beginPath();
-        this.ctx.rect(PARALLEL_PADDING, PARALLEL_PADDING + SVG_TEXT_BASELINE, w, h);
-        this.ctx.closePath();
-        this.ctx.fill();
+        // other prop
+        this.gl = null;
+        this.glReady = false;
+        this.mat = null;
+        this.qtn = null;
+
+        // canvas initialize
+        this.initCanvas();
     }
+    // axis
     ParallelCoordinate.prototype.addAxis = function(titleString, minmax){
         this.axisArray.push(new Axis(this, titleString, minmax));
         this.axisCount = this.axisArray.length;
@@ -84,19 +85,26 @@
             j = PARALLEL_PADDING + (margin - SVG_DEFAULT_WIDTH) * i - SVG_DEFAULT_WIDTH / 2;
             this.axisArray[i].setPosition(j);
         }
-        // temp
+        return this;
+    };
+    // canvas
+    ParallelCoordinate.prototype.initCanvas = function(){
+        this.gl = this.canvas.getContext('webgl');
+        this.glReady = this.gl !== null && this.gl !== undefined;
+        return this;
+    };
+    ParallelCoordinate.prototype.resetCanvas = function(){
+        var gl = this.gl;
+        if(!this.mat){this.mat = new matIV();}
+        if(!this.qtn){this.qtn = new matIV();}
+    };
+    ParallelCoordinate.prototype.updateCanvas = function(){
+        
+    };
+    ParallelCoordinate.prototype.getDrawRect = function(){
         var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
         var h = this.parent.clientHeight - PARALLEL_PADDING * 2 - SVG_TEXT_BASELINE;
-        this.canvas.width = this.parent.clientWidth;
-        this.canvas.height = this.parent.clientHeight;
-        this.ctx.fillStyle = 'green';
-        this.ctx.beginPath();
-        this.ctx.rect(PARALLEL_PADDING, PARALLEL_PADDING + SVG_TEXT_BASELINE, w, h);
-        this.ctx.closePath();
-        this.ctx.fill();
-        // temp
-
-        return this;
+        return {width: w, height: h};
     };
 
     // axis ===================================================================
