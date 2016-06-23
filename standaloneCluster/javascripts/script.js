@@ -15,6 +15,7 @@
     var AXIS_LINE_WIDTH = 2;       // 軸の線の太さ
     var AXIS_LINE_COLOR = '#333';  // 軸の線の色
     var AXIS_SCALE_WIDTH = 5;      // 軸の目盛線の横方向に伸びる量
+    var BEZIER_DIVISION = 100;     // ベジェ曲線の分割数
 
     var parallel;
 
@@ -87,6 +88,7 @@
         // canvas initialize
         this.initCanvas();
         this.resetCanvas();
+        this.resetBezierCanvas();
         this.drawRect = this.getDrawRect();
     }
     // axis
@@ -120,6 +122,7 @@
     ParallelCoordinate.prototype.resetCanvas = function(){
         var gl = this.gl;
         var mat = this.mat;
+        if(!this.glReady){return;}
         if(!this.mat){this.mat = new matIV();}
         if(!this.qtn){this.qtn = new qtnIV();}
         this.drawRect = this.getDrawRect();
@@ -153,16 +156,65 @@
         ];
         var vPosition = create_vbo(gl, position);
         this.vboList = [vPosition];
+        return this;
+    };
+    ParallelCoordinate.prototype.resetBezierCanvas = function(){
+        var i, j;
+        var gl = this.gl;
+        var mat = this.mat;
+        if(!this.glReady){return;}
+        if(!this.mat){this.mat = new matIV();}
+        if(!this.qtn){this.qtn = new qtnIV();}
+        this.drawRect = this.getDrawRect();
 
+        var vSource = '';
+        vSource += 'attribute vec3 position;';
+        vSource += 'uniform mat4 matrix;';
+        vSource += 'uniform vec4 point;';
+        vSource += '';
+        vSource += 'void main(){';
+        vSource += '    float w = point.y - point.x;';
+        vSource += '    float h = point.w - point.z;';
+        vSource += '    vec3 p = vec3(position.x * w + point.x,';
+        vSource += '                  position.x * h + point.z, 0.0);';
+        vSource += '    gl_Position = matrix * vec4(p, 1.0);';
+        vSource += '}';
+        var fSource = '';
+        fSource += 'precision mediump float;';
+        fSource += 'uniform vec4 color;';
+        fSource += 'void main(){';
+        fSource += '    gl_FragColor = color;';
+        fSource += '}';
+        var vs = create_shader(gl, vSource, gl.VERTEX_SHADER);
+        var fs = create_shader(gl, fSource, gl.FRAGMENT_SHADER);
+        this.bPrg = create_program(gl, vs, fs);
+        this.bAttL = [gl.getAttribLocation(this.bPrg, 'position')];
+        this.bAttS = [3];
+        this.bUniL = {
+            matrix: gl.getUniformLocation(this.bPrg, 'matrix'),
+            point:  gl.getUniformLocation(this.bPrg, 'point'),
+            color:  gl.getUniformLocation(this.bPrg, 'color')
+        };
+        var position = [];
+        j = 1.0 / BEZIER_DIVISION;
+        for(i = 0; i < BEZIER_DIVISION; ++i){
+            position.push(i * j, 0.0, 0.0);
+        }
+        var vPosition = create_vbo(gl, position);
+        this.bVboList = [vPosition];
+        return this;
     };
     ParallelCoordinate.prototype.drawCanvas = function(){
         var i, j, k, l;
-        var v, w, x, y;
+        var r, s, t, u, v, w, x, y;
         var gl = this.gl;
         var mat = this.mat;
-        var vMatrix  = mat.identity(mat.create());
-        var pMatrix  = mat.identity(mat.create());
-        var vpMatrix = mat.identity(mat.create());
+        var mMatrix   = mat.identity(mat.create());
+        var vMatrix   = mat.identity(mat.create());
+        var pMatrix   = mat.identity(mat.create());
+        var vpMatrix  = mat.identity(mat.create());
+        var mvpMatrix = mat.identity(mat.create());
+        if(!this.glReady){return;}
         this.canvas.width = this.parent.clientWidth;
         this.canvas.height = this.parent.clientHeight;
         this.drawRect = this.getDrawRect();
@@ -187,34 +239,63 @@
         gl.clearColor(1.0, 1.0, 1.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        if(this.axisArray.length > 1){
-            for(i = 0, j = this.axisArray.length; i < j; ++i){
-                x = this.axisArray[i].getHorizontalRange();
-                for(k = 0, l = this.axisArray[i].clusters.length; k < l; ++k){
-                    v = this.axisArray[i].clusters[k].getNomalizeRange();
-                    w = (this.axisArray[i].height - SVG_TEXT_BASELINE) * v.min;
-                    y = (this.axisArray[i].height - SVG_TEXT_BASELINE) * v.max;
-                    draw.bind(this)(x, x + SVG_DEFAULT_WIDTH, y, w, [1.0 / j * i / 2.0 + 0.5, 1.0 / l * k, 1.0 - 1.0 / l * k, 1.0]);
-                }
-            }
-        }
-        gl.flush();
-
-        function draw(left, right, top, bottom, color){
-            var w = left - right;
+        var drawClusterRect = function(left, right, top, bottom, color){
+            var w = right - left;
             var h = top - bottom;
-            var mMatrix = mat.identity(mat.create());
-            var mvpMatrix = mat.identity(mat.create());
+            mat.identity(mMatrix);
             mat.translate(mMatrix, [left - w / 2, bottom, 0.0], mMatrix);
             mat.scale(mMatrix, [w, h, 1.0], mMatrix);
             mat.multiply(vpMatrix, mMatrix, mvpMatrix);
 
+            gl.useProgram(this.prg);
             gl.uniformMatrix4fv(this.uniL.matrix, false, mvpMatrix);
             gl.uniform4fv(this.uniL.color, color);
 
             set_attribute(gl, this.vboList, this.attL, this.attS);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        }.bind(this);
+
+        var drawBeziercurve = function(left, right, first, second, color){
+            gl.useProgram(this.bPrg);
+            gl.uniformMatrix4fv(this.bUniL.matrix, false, vpMatrix);
+            gl.uniform4fv(this.bUniL.point, [left, right, first, second]);
+            gl.uniform4fv(this.bUniL.color, color);
+
+            set_attribute(gl, this.bVboList, this.bAttL, this.bAttS);
+            gl.drawArrays(gl.LINE_STRIP, 0, BEZIER_DIVISION);
+        }.bind(this);
+
+        if(this.axisArray.length > 1){
+            for(i = 0, j = this.axisArray.length; i < j; ++i){
+                x = this.axisArray[i].getHorizontalRange();                     // 対象軸の X 座標（非正規）
+                for(k = 0, l = this.axisArray[i].clusters.length; k < l; ++k){
+                    // axis rect
+                    v = this.axisArray[i].clusters[k].getNomalizeRange();       // クラスタの上下限値（正規）
+                    w = (this.axisArray[i].height - SVG_TEXT_BASELINE) * v.min; // 高さに正規化済みのクラスタの下限値掛ける
+                    y = (this.axisArray[i].height - SVG_TEXT_BASELINE) * v.max; // 高さに正規化済みのクラスタの上限値掛ける
+                    drawClusterRect(x, x + SVG_DEFAULT_WIDTH, y, w, [1.0 / j * i / 2.0 + 0.5, 1.0 / l * k, 1.0 - 1.0 / l * k, 1.0]);
+
+                    // bezier curve
+                    if(i !== (this.axisArray.length - 1)){                      // 最終軸じゃないときだけやる
+                        t = this.axisArray[i + 1].getHorizontalRange();         // 右隣の軸の X 座標（非正規）
+                        u = (y - w) / 2 + w;                                    // 対象クラスタの中心 Y 座標
+                        for(r = 0, s = this.axisArray[i + 1].clusters.length; r < s; ++r){
+                            v = this.axisArray[i + 1].clusters[r].getNomalizeRange();
+                            w = (this.axisArray[i + 1].height - SVG_TEXT_BASELINE) * ((v.max - v.min) / 2 + v.min);
+                            // x == 対称軸の X 座標
+                            // t == 右軸の X 座標
+                            // u == 対象クラスタの中心の Y 座標
+                            // w == 右軸対象クラスタの中心の Y 座標
+                            drawBeziercurve(x, t, u, w, [1.0, 0.0, 0.0, 1.0]);
+                        }
+                    }
+                }
+            }
         }
+
+        gl.flush();
+
+        return this;
     };
     ParallelCoordinate.prototype.getDrawRect = function(){
         var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
