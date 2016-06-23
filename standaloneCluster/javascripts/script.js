@@ -570,7 +570,7 @@
     Axis.prototype.getHorizontalRange = function(){
         // horizon range
         var i = parseFloat(this.svg.style.left.replace(/px$/));
-        return i + (SVG_DEFAULT_WIDTH / 2) + (this.index * SVG_DEFAULT_WIDTH) - 100;
+        return i + (SVG_DEFAULT_WIDTH / 2) + (this.index * SVG_DEFAULT_WIDTH) - PARALLEL_PADDING;
     };
     Axis.prototype.getNomalizeHorizontalRange = function(){
         // horizon normalize range
@@ -585,7 +585,12 @@
         if(!this.onDrag){return;}
         var x = eve.pageX - this.left;
         var df = parseFloat(this.svg.style.left.replace(/px$/, ''));
-        this.svg.style.left = (df + x) + 'px';
+        var i = df + x;
+        var j = this.parent.drawRect.width - ((this.index + 1) * SVG_DEFAULT_WIDTH) + (SVG_DEFAULT_WIDTH / 2) + PARALLEL_PADDING;
+        var k = PARALLEL_PADDING - (this.index * SVG_DEFAULT_WIDTH) - (SVG_DEFAULT_WIDTH / 2);
+        if(i > j){i = j;}
+        if(i < k){i = k;}
+        this.svg.style.left = i + 'px';
         this.left = eve.pageX;
         if(this.parent.glReady){
             this.parent.drawCanvas();
