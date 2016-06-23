@@ -172,12 +172,24 @@
         vSource += 'uniform mat4 matrix;';
         vSource += 'uniform vec4 point;';
         vSource += '';
+        vSource += 'vec2 bezier(float t, vec2 p0, vec2 p1, vec2 p2, vec2 p3){';
+        vSource += '    float r = 1.0 - t;';
+        vSource += '    return vec2(  r * r * r *     p0.x +';
+        vSource += '                3.0 * r * r * t * p1.x +';
+        vSource += '                3.0 * r * t * t * p2.x +';
+        vSource += '                  t * t * t *     p3.x,';
+        vSource += '                  r * r * r *     p0.y +';
+        vSource += '                3.0 * r * r * t * p1.y +';
+        vSource += '                3.0 * r * t * t * p2.y +';
+        vSource += '                  t * t * t *     p3.y);';
+        vSource += '}';
+        vSource += '';
         vSource += 'void main(){';
-        vSource += '    float w = point.y - point.x;';
-        vSource += '    float h = point.w - point.z;';
-        vSource += '    vec3 p = vec3(position.x * w + point.x,';
-        vSource += '                  position.x * h + point.z, 0.0);';
-        vSource += '    gl_Position = matrix * vec4(p, 1.0);';
+        vSource += '    vec2 p0 = vec2(point.x, point.z);';
+        vSource += '    vec2 p1 = vec2(point.x + (point.y - point.x) * 0.5, point.z);';
+        vSource += '    vec2 p2 = vec2(point.y + (point.x - point.y) * 0.5, point.w);';
+        vSource += '    vec2 p3 = vec2(point.y, point.w);';
+        vSource += '    gl_Position = matrix * vec4(bezier(position.x, p0, p1, p2, p3), 0.0, 1.0);';
         vSource += '}';
         var fSource = '';
         fSource += 'precision mediump float;';
@@ -274,7 +286,14 @@
                     w = (this.axisArray[i].height - SVG_TEXT_BASELINE) * v.min; // 高さに正規化済みのクラスタの下限値掛ける
                     y = (this.axisArray[i].height - SVG_TEXT_BASELINE) * v.max; // 高さに正規化済みのクラスタの上限値掛ける
                     drawClusterRect(x, x + SVG_DEFAULT_WIDTH, y, w, [1.0 / j * i / 2.0 + 0.5, 1.0 / l * k, 1.0 - 1.0 / l * k, 1.0]);
-
+                }
+            }
+            for(i = 0, j = this.axisArray.length; i < j; ++i){
+                x = this.axisArray[i].getHorizontalRange();                     // 対象軸の X 座標（非正規）
+                for(k = 0, l = this.axisArray[i].clusters.length; k < l; ++k){
+                    v = this.axisArray[i].clusters[k].getNomalizeRange();       // クラスタの上下限値（正規）
+                    w = (this.axisArray[i].height - SVG_TEXT_BASELINE) * v.min; // 高さに正規化済みのクラスタの下限値掛ける
+                    y = (this.axisArray[i].height - SVG_TEXT_BASELINE) * v.max; // 高さに正規化済みのクラスタの上限値掛ける
                     // bezier curve
                     if(i !== (this.axisArray.length - 1)){                      // 最終軸じゃないときだけやる
                         t = this.axisArray[i + 1].getHorizontalRange();         // 右隣の軸の X 座標（非正規）
@@ -286,7 +305,7 @@
                             // t == 右軸の X 座標
                             // u == 対象クラスタの中心の Y 座標
                             // w == 右軸対象クラスタの中心の Y 座標
-                            drawBeziercurve(x, t, u, w, [1.0, 0.0, 0.0, 1.0]);
+                            drawBeziercurve(x, t, u, w, [0.2, 0.5, 1.0, 1.0]);
                         }
                     }
                 }
