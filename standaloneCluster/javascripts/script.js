@@ -89,6 +89,7 @@
         this.initCanvas();
         this.resetCanvas();
         this.resetBezierCanvas();
+        this.resetBezierGeometryCanvas();
         this.drawRect = this.getDrawRect();
     }
     // axis
@@ -209,11 +210,88 @@
         };
         var position = [];
         j = 1.0 / BEZIER_DIVISION;
+        j += j / BEZIER_DIVISION;
         for(i = 0; i < BEZIER_DIVISION; ++i){
             position.push(i * j, 0.0, 0.0);
         }
         var vPosition = create_vbo(gl, position);
         this.bVboList = [vPosition];
+        return this;
+    };
+    ParallelCoordinate.prototype.resetBezierGeometryCanvas = function(){
+        var i, j;
+        var gl = this.gl;
+        var mat = this.mat;
+        if(!this.glReady){return;}
+        if(!this.mat){this.mat = new matIV();}
+        if(!this.qtn){this.qtn = new qtnIV();}
+        this.drawRect = this.getDrawRect();
+
+        var vSource = '';
+        vSource += 'attribute vec3 position;';
+        vSource += 'attribute float signs;';
+        vSource += 'uniform mat4 matrix;';
+        vSource += 'uniform vec4 point;';
+        vSource += 'uniform float nextTime;';
+        vSource += 'uniform float scale;';
+        vSource += 'const float PI = 3.141592;';
+        vSource += '';
+        vSource += 'vec2 bezier(float t, vec2 p0, vec2 p1, vec2 p2, vec2 p3){';
+        vSource += '    float r = 1.0 - t;';
+        vSource += '    return vec2(  r * r * r *     p0.x +';
+        vSource += '                3.0 * r * r * t * p1.x +';
+        vSource += '                3.0 * r * t * t * p2.x +';
+        vSource += '                  t * t * t *     p3.x,';
+        vSource += '                  r * r * r *     p0.y +';
+        vSource += '                3.0 * r * r * t * p1.y +';
+        vSource += '                3.0 * r * t * t * p2.y +';
+        vSource += '                  t * t * t *     p3.y);';
+        vSource += '}';
+        vSource += '';
+        vSource += 'void main(){';
+        vSource += '    float f = abs(position.x - 0.5) * 2.0;';
+        vSource += '    float g = (1.0 - cos(f * PI)) * 0.75 + 1.0;';
+        vSource += '    vec2 p0 = vec2(point.x, point.z);';
+        vSource += '    vec2 p1 = vec2(point.x + (point.y - point.x) * 0.5, point.z);';
+        vSource += '    vec2 p2 = vec2(point.y + (point.x - point.y) * 0.5, point.w);';
+        vSource += '    vec2 p3 = vec2(point.y, point.w);';
+        vSource += '    vec2 p  = bezier(position.x, p0, p1, p2, p3);';
+        vSource += '    vec2 n  = bezier(position.x + nextTime, p0, p1, p2, p3);';
+        vSource += '    vec2 r  = normalize(n - p);';
+        vSource += '    gl_Position = matrix * vec4(p + (vec2(r.y, -r.x) * signs) * scale * g, 0.0, 1.0);';
+        vSource += '}';
+        var fSource = '';
+        fSource += 'precision mediump float;';
+        fSource += 'uniform vec4 color;';
+        fSource += 'void main(){';
+        fSource += '    gl_FragColor = color;';
+        fSource += '}';
+        var vs = create_shader(gl, vSource, gl.VERTEX_SHADER);
+        var fs = create_shader(gl, fSource, gl.FRAGMENT_SHADER);
+        this.bgPrg = create_program(gl, vs, fs);
+        this.bgAttL = [
+            gl.getAttribLocation(this.bgPrg, 'position'),
+            gl.getAttribLocation(this.bgPrg, 'signs')
+        ];
+        this.bgAttS = [3, 1];
+        this.bgUniL = {
+            matrix:   gl.getUniformLocation(this.bgPrg, 'matrix'),
+            point:    gl.getUniformLocation(this.bgPrg, 'point'),
+            nextTime: gl.getUniformLocation(this.bgPrg, 'nextTime'),
+            scale:    gl.getUniformLocation(this.bgPrg, 'scale'),
+            color:    gl.getUniformLocation(this.bgPrg, 'color')
+        };
+        var position = [];
+        var signs = [];
+        j = 1.0 / BEZIER_DIVISION;
+        j += j / BEZIER_DIVISION;
+        for(i = 0; i < BEZIER_DIVISION; ++i){
+            position.push(i * j, 0.0, 0.0, i * j, 0.0, 0.0);
+            signs.push(1.0, -1.0);
+        }
+        var vPosition = create_vbo(gl, position);
+        var vSigns = create_vbo(gl, signs);
+        this.bgVboList = [vPosition, vSigns];
         return this;
     };
     ParallelCoordinate.prototype.drawCanvas = function(){
@@ -279,6 +357,18 @@
             gl.drawArrays(gl.LINE_STRIP, 0, BEZIER_DIVISION);
         }.bind(this);
 
+        var drawBezierGeometry = function(left, right, first, second, color){
+            gl.useProgram(this.bgPrg);
+            gl.uniformMatrix4fv(this.bgUniL.matrix, false, vpMatrix);
+            gl.uniform4fv(this.bgUniL.point, [left, right, first, second]);
+            gl.uniform1f(this.bgUniL.nextTime, 1.0 / BEZIER_DIVISION);
+            gl.uniform1f(this.bgUniL.scale, 3.0);
+            gl.uniform4fv(this.bgUniL.color, color);
+
+            set_attribute(gl, this.bgVboList, this.bgAttL, this.bgAttS);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, BEZIER_DIVISION * 2);
+        }.bind(this);
+
         if(this.axisArray.length > 1){
             // 少々冗長なのだが、軸上の矩形を確実に下に描画させるために
             for(i = 0, j = this.axisArray.length; i < j; ++i){
@@ -311,7 +401,8 @@
                             // t == 右軸の X 座標
                             // u == 対象クラスタの中心の Y 座標
                             // w == 右軸対象クラスタの中心の Y 座標
-                            drawBeziercurve(x, t, u, w, [0.2, 0.5, 1.0, p]);
+                            drawBezierGeometry(x, t, u, w, [0.2, 0.5, 1.0, p]);
+                            // drawBeziercurve(x, t, u, w, [0.2, 0.5, 1.0, p]);
                         }
                     }
                 }
@@ -496,6 +587,9 @@
         var df = parseFloat(this.svg.style.left.replace(/px$/, ''));
         this.svg.style.left = (df + x) + 'px';
         this.left = eve.pageX;
+        if(this.parent.glReady){
+            this.parent.drawCanvas();
+        }
     };
     Axis.prototype.dragEnd = function(eve){
         this.onDrag = false;
