@@ -62,6 +62,9 @@
         // parallel initialize
         parallel = new ParallelCoordinate(document.getElementById('wrap'));
 
+        // cluster tree initialize
+        parallel.addClusterTree(json.cluster);
+
         // axis initialize
         for(i = 0, j = json.axis.length; i < j; ++i){
             parallel.addAxis(json.axis[i], i);
@@ -80,6 +83,7 @@
         this.padding = 0;
         this.axisCount = 0;      // 自身に含まれる列の数
         this.axisArray = [];     // 列（Axis インスタンス）格納する配列
+        this.clusterTree = null;
         this.beginFlow = 'left'; // どちらが始点となりデータが流れていくか（未使用）
 
         this.parent = parentElement;                    // 自身を格納している親エレメント
@@ -111,6 +115,10 @@
     ParallelCoordinate.prototype.addAxis = function(axisData, index){
         this.axisArray.push(new Axis(this, index, axisData));
         this.axisCount = this.axisArray.length;
+        return this;
+    };
+    ParallelCoordinate.prototype.addClusterTree = function(data){
+        this.clusterTree = new ClusterTree(data);
         return this;
     };
     // 列の配置をリセットして可能なら canvas を再描画する
@@ -402,6 +410,9 @@
                     drawClusterRect(x, x + SVG_DEFAULT_WIDTH, y, w, [1.0 / j * i / 2.0 + 0.5, 1.0 / l * k, 1.0 - 1.0 / l * k, 1.0]);
                 }
             }
+
+            /*
+
             for(i = 0, j = this.axisArray.length; i < j; ++i){
                 q = this.axisArray[i].height - SVG_TEXT_BASELINE;         // Canvas の描画すべきエリアの高さ
                 x = this.axisArray[i].getHorizontalRange();               // 対象軸の X 座標（非正規）
@@ -427,6 +438,8 @@
                     }
                 }
             }
+
+            */
         }
 
         gl.flush();
@@ -446,8 +459,6 @@
         this.title = data.title; // 列のラベル
         this.index = index;      // インデックス（通常左から読み込んだ順に配置）
         this.svg = NS('svg');    // SVG エレメント
-        this.min = 0;            // min
-        this.max = 0;            // max
         this.width = 0;
         this.height = 0;
         this.left = 0;
@@ -455,19 +466,10 @@
         this.centerH = 0;        // 軸の中心が矩形の左から何ピクセル目にあるか
         this.bbox = null;        // svg.getBBox の結果
         this.listeners = [];     // リスナを殺すためにキャッシュするので配列を用意
-        this.clusters = [];      // 自身に格納しているクラスタ
-        var i, j;
-        for(i = 0, j = data.cluster.length; i < j; ++i){
-            this.clusters.push(new Cluster(
-                this,
-                i,
-                data.cluster[i].out,
-                data.cluster[i].min,
-                data.cluster[i].max,
-                [1, 1, 1, 1]         // ここは将来的に色が入る可能性がある
-            ));
-        }
-        this.getClustersMinMax();    // クラスタの minmax とってきて自身に適用
+        var v = this.parent.clusterTree.getAxisMinMax(index);
+        this.min = v.min;
+        this.max = v.max;
+        this.clusters = this.parent.clusterTree.getAxisClusters(index);
         this.parent.layer.appendChild(this.svg);
     }
     // 軸を設定して SVG を生成して描画する
@@ -576,24 +578,6 @@
         this.min = min;
         this.max = max;
     };
-    // 自身に格納しているクラスタの内容から minmax を求めて自身に設定する
-    Axis.prototype.getClustersMinMax = function(){
-        if(this.clusters.length === 0){return;}
-        var i, j, k, l;
-        k = l = 0;
-        if(this.clusters.length === 1){
-            k = this.clusters[0].min;
-            l = this.clusters[0].max;
-        }else{
-            for(i = 0, j = this.clusters.length; i < j; ++i){
-                k = Math.min(this.clusters[i].min, k);
-                l = Math.max(this.clusters[i].max, l);
-            }
-        }
-        this.min = k;
-        this.max = l;
-        return this;
-    };
     // 正規化していない軸の Left（ピクセル単位、0 始点）
     Axis.prototype.getHorizontalRange = function(){
         // horizon range
@@ -635,8 +619,8 @@
     };
 
     // cluster ================================================================
-    function Cluster(axis, index, out, min, max, color){
-        this.parentAxis = axis; // 自分自身が所属する軸インスタンス
+    function Cluster(parent, index, out, min, max, color){
+        this.parent = parent;   // parallel
         this.index = index;     // 自分自身のインデックス
         this.out = out;         // 自分からの出力（配列で、全て足して1
         this.min = min;         // 自分自身の最小値
@@ -647,11 +631,45 @@
     // 正規化された、クラスタの縦方向の位置の上辺と下辺
     Cluster.prototype.getNomalizeRange = function(){
         // vertical normalize range
-        var i = this.parentAxis.max - this.parentAxis.min;
+        var i = this.parent.axisArray[this.index].max - this.parent.axisArray[this.indenx].min;
         return {
-            min: (this.min - this.parentAxis.min) / i,
-            max: 1.0 - (this.parentAxis.max - this.max) / i
+            min: (this.min - this.parent.axisArray[this.index].min) / i,
+            max: 1.0 - (this.parent.axisArray[this.index].max - this.max) / i
         };
+    };
+    // クラスタを全て格納したデータツリー
+    // こいつにいろいろ言うと、クラスタツリーを操作してくれたりデータを返してくれたりするものを想定
+    function ClusterTree(data){
+        this.tree = data;
+        this.data = this.getClusters();
+    }
+    ClusterTree.prototype.getAxisMinMax = function(index){
+        return {min: this.data[index].axisMin, max: this.data[index].axisMax};
+    };
+    ClusterTree.prototype.getAxisClusters = function(index){
+        return this.data[index].clusters;
+    };
+    ClusterTree.prototype.getClusters = function(){
+        if(!this.tree || !this.tree.hasOwnProperty('length') || !this.tree.length === 0){return;}
+        var temp = this.tree;
+        var i, j, min, max;
+        var arr = [];
+        var cluster = [];
+        i = j = min = max = 0;
+        while(true){
+            if(!temp || !temp.hasOwnProperty('length') || temp.length === 0){break;}
+            for(j = 0; j < temp.length; ++j){
+                min = Math.min(temp[j].min, min);
+                max = Math.max(temp[j].max, max);
+                cluster.push({index: i, min: temp[j].min, max: temp[j].max, value: temp[j].value});
+            }
+            arr.push({axisMin: min, axisMax: max, clusters: cluster});
+            temp = temp[0].out;
+            min = max = 0;
+            cluster = [];
+            ++i;
+        }
+        return arr;
     };
 
     // util ===================================================================
