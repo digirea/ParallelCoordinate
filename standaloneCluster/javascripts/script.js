@@ -7,23 +7,40 @@
     var sph = new SPHLoader();
     var issph = null;
 
-    var PARALLEL_PADDING = 100;    // 対象エリアのパディング
-    var SVG_DEFAULT_WIDTH = 30;    // 軸のデフォルトの幅
+    var PARALLEL_PADDING = 100;    // 対象描画エリアのパディング
+    var SVG_DEFAULT_WIDTH = 30;    // 軸周辺の矩形のデフォルト幅
     var SVG_TEXT_BASELINE = 30;    // svg にタイトルテキスト書くときのベースラインのトップからの距離
     var SVG_TEXT_SIZE = 'medium';  // svg に書くタイトルテキストのフォントサイズ
     var SVG_SCALE_SIZE = 'small';  // svg で目盛り書くときのフォントサイズ
     var AXIS_LINE_WIDTH = 2;       // 軸の線の太さ
     var AXIS_LINE_COLOR = '#333';  // 軸の線の色
     var AXIS_SCALE_WIDTH = 5;      // 軸の目盛線の横方向に伸びる量
-    var BEZIER_DIVISION = 100;     // ベジェ曲線の分割数
+    var BEZIER_DIVISION = 100;     // ベジェ曲線ポリゴンの分割数
 
-    var parallel;
+    var parallel;                  // パラレルコーディネートのインスタンス
+    var lineScale = 3.0;           // ベジェポリの厚み係数
 
     // window onload and json import
     window.addEventListener('load', function(){
         // resize event
         window.addEventListener('resize', function(){
             parallel.resetAxis.bind(parallel)();
+        }, false);
+
+        // line width change on keydown
+        window.addEventListener('keydown', function(eve){
+            if(parallel && parallel.glReady){
+                switch(eve.keyCode){
+                    case 38: // up
+                        lineScale = Math.min(20.0, lineScale + 0.2);
+                        break;
+                    case 40: // down
+                        lineScale = Math.max(1.0, lineScale - 0.2);
+                        break;
+                }
+                // redraw
+                parallel.drawCanvas();
+            }
         }, false);
 
         // json import
@@ -61,43 +78,42 @@
         this.width = 0;
         this.height = 0;
         this.padding = 0;
-        this.axisCount = 0;
-        this.axisArray = [];
-        this.beginFlow = 'left';
+        this.axisCount = 0;      // 自身に含まれる列の数
+        this.axisArray = [];     // 列（Axis インスタンス）格納する配列
+        this.beginFlow = 'left'; // どちらが始点となりデータが流れていくか（未使用）
 
-        this.parent = parentElement;
-        this.canvas = document.createElement('canvas');
+        this.parent = parentElement;                    // 自身を格納している親エレメント
+        this.canvas = document.createElement('canvas'); // canvas は動的に生成
         this.canvas.style.float = 'left';
         this.canvas.width = this.parent.clientWidth;
         this.canvas.height = this.parent.clientHeight;
         this.canvas.style.position = 'absolute';
-        this.layer = document.createElement('div');
+        this.layer = document.createElement('div');     // canvas の上に乗るレイヤ（SVG などが入る）も動的生成
         this.layer.style.width = '100%';
         this.layer.style.height = '100%';
         this.layer.style.position = 'relative';
         this.parent.appendChild(this.canvas);
         this.parent.appendChild(this.layer);
 
-        // other prop
         this.gl = null;
         this.glReady = false;
         this.mat = null;
         this.qtn = null;
         this.drawRect = null;
 
-        // canvas initialize
-        this.initCanvas();
-        this.resetCanvas();
-        this.resetBezierCanvas();
-        this.resetBezierGeometryCanvas();
-        this.drawRect = this.getDrawRect();
+        this.initCanvas();                  // canvas の WebGL 関連初期化
+        this.resetCanvas();                 // 初期化以降にリセットする場合
+        this.resetBezierCanvas();           // ベジェ曲線モードでリセット
+        this.resetBezierGeometryCanvas();   // ベジェ曲線ポリゴンジオメトリモード
+        this.drawRect = this.getDrawRect(); // 描画対象の矩形領域
     }
-    // axis
+    // 列追加
     ParallelCoordinate.prototype.addAxis = function(axisData, index){
         this.axisArray.push(new Axis(this, index, axisData));
         this.axisCount = this.axisArray.length;
         return this;
     };
+    // 列の配置をリセットして可能なら canvas を再描画する
     ParallelCoordinate.prototype.resetAxis = function(){
         var i, j;
         var space = this.layer.clientWidth - PARALLEL_PADDING * 2;
@@ -114,12 +130,13 @@
         }
         return this;
     };
-    // canvas
+    // WebGL コンテキストなどの初期化
     ParallelCoordinate.prototype.initCanvas = function(){
         this.gl = this.canvas.getContext('webgl');
         this.glReady = this.gl !== null && this.gl !== undefined;
         return this;
     };
+    // canvas に矩形とか描けるやーつ
     ParallelCoordinate.prototype.resetCanvas = function(){
         var gl = this.gl;
         var mat = this.mat;
@@ -159,6 +176,7 @@
         this.vboList = [vPosition];
         return this;
     };
+    // ベジェ曲線をラインで描く
     ParallelCoordinate.prototype.resetBezierCanvas = function(){
         var i, j;
         var gl = this.gl;
@@ -218,6 +236,7 @@
         this.bVboList = [vPosition];
         return this;
     };
+    // ベジェ曲線をジオメトリとして描く
     ParallelCoordinate.prototype.resetBezierGeometryCanvas = function(){
         var i, j;
         var gl = this.gl;
@@ -294,6 +313,7 @@
         this.bgVboList = [vPosition, vSigns];
         return this;
     };
+    // 初期化などが全て終わっている前提の描画実行部分
     ParallelCoordinate.prototype.drawCanvas = function(){
         var i, j, k, l;
         var p, q, r, s, t, u, v, w, x, y;
@@ -362,7 +382,7 @@
             gl.uniformMatrix4fv(this.bgUniL.matrix, false, vpMatrix);
             gl.uniform4fv(this.bgUniL.point, [left, right, first, second]);
             gl.uniform1f(this.bgUniL.nextTime, 1.0 / BEZIER_DIVISION);
-            gl.uniform1f(this.bgUniL.scale, 3.0);
+            gl.uniform1f(this.bgUniL.scale, lineScale);
             gl.uniform4fv(this.bgUniL.color, color);
 
             set_attribute(gl, this.bgVboList, this.bgAttL, this.bgAttS);
@@ -413,6 +433,7 @@
 
         return this;
     };
+    // 描画対象となる矩形を得る
     ParallelCoordinate.prototype.getDrawRect = function(){
         var w = this.parent.clientWidth - PARALLEL_PADDING * 2;
         var h = this.parent.clientHeight - PARALLEL_PADDING * 2 - SVG_TEXT_BASELINE;
@@ -421,21 +442,20 @@
 
     // axis ===================================================================
     function Axis(parent, index, data){
-        this.parent = parent;
-        this.title = data.title;
-        this.index = index;
-        this.svg = document.createElementNS(NS_SVG, 'svg');
-        this.min = 0;
-        this.max = 0;
+        this.parent = parent;    // 親となる ParallelCoordinate インスタンス
+        this.title = data.title; // 列のラベル
+        this.index = index;      // インデックス（通常左から読み込んだ順に配置）
+        this.svg = NS('svg');    // SVG エレメント
+        this.min = 0;            // min
+        this.max = 0;            // max
         this.width = 0;
         this.height = 0;
         this.left = 0;
-        this.defaultLeft = 0;
-        this.onDrag = false;
-        this.centerH = 0;
-        this.bbox = null;
-        this.listeners = [];
-        this.clusters = [];
+        this.onDrag = false;     // ドラッグされているかどうかのフラグ
+        this.centerH = 0;        // 軸の中心が矩形の左から何ピクセル目にあるか
+        this.bbox = null;        // svg.getBBox の結果
+        this.listeners = [];     // リスナを殺すためにキャッシュするので配列を用意
+        this.clusters = [];      // 自身に格納しているクラスタ
         var i, j;
         for(i = 0, j = data.cluster.length; i < j; ++i){
             this.clusters.push(new Cluster(
@@ -444,12 +464,13 @@
                 data.cluster[i].out,
                 data.cluster[i].min,
                 data.cluster[i].max,
-                [1, 1, 1, 1]
+                [1, 1, 1, 1]         // ここは将来的に色が入る可能性がある
             ));
         }
-        this.getClustersMinMax();
+        this.getClustersMinMax();    // クラスタの minmax とってきて自身に適用
         this.parent.layer.appendChild(this.svg);
     }
+    // 軸を設定して SVG を生成して描画する
     Axis.prototype.update = function(titleString, minmax){
         var path = null;
         var text = null;
@@ -507,13 +528,9 @@
         this.svg.appendChild(path);
         this.drawScale();
     };
-    Axis.prototype.setPosition = function(x){
-        this.svg.style.left = x;
-    };
-    Axis.prototype.setMinMax = function(min, max){
-        this.min = min;
-        this.max = max;
-    };
+    // 軸を描画している実行部分
+    // 現状は軸を minmax の差分を用いて 10 分割している
+    // つまり、最小値も最大値も、きれいに軸の両端にぴったりと配置される
     Axis.prototype.drawScale = function(){
         var i, j, k, l;
         var text, path, bbox;
@@ -550,6 +567,16 @@
             this.svg.appendChild(path);
         }
     };
+    // 軸のスタイルを変更して直接横位置を設定する（非推奨）
+    Axis.prototype.setPosition = function(x){
+        this.svg.style.left = x;
+    };
+    // 自身の minmax プロパティを直接設定する（非推奨）
+    Axis.prototype.setMinMax = function(min, max){
+        this.min = min;
+        this.max = max;
+    };
+    // 自身に格納しているクラスタの内容から minmax を求めて自身に設定する
     Axis.prototype.getClustersMinMax = function(){
         if(this.clusters.length === 0){return;}
         var i, j, k, l;
@@ -567,20 +594,24 @@
         this.max = l;
         return this;
     };
+    // 正規化していない軸の Left（ピクセル単位、0 始点）
     Axis.prototype.getHorizontalRange = function(){
         // horizon range
         var i = parseFloat(this.svg.style.left.replace(/px$/));
         return i + (SVG_DEFAULT_WIDTH / 2) + (this.index * SVG_DEFAULT_WIDTH) - PARALLEL_PADDING;
     };
+    // 正規化した軸の横位置（0 ~ 1）
     Axis.prototype.getNomalizeHorizontalRange = function(){
         // horizon normalize range
         var i = this.getHorizontalRange();
         return i / this.parent.drawRect.width;
     };
+    // 軸のドラッグ開始イベント
     Axis.prototype.dragStart = function(eve){
         this.left = eve.pageX;
         this.onDrag = true;
     };
+    // 軸のドラッグイベント
     Axis.prototype.dragMove = function(eve){
         if(!this.onDrag){return;}
         var x = eve.pageX - this.left;
@@ -596,14 +627,16 @@
             this.parent.drawCanvas();
         }
     };
+    // 軸のドラッグ終了イベント
     Axis.prototype.dragEnd = function(eve){
         this.onDrag = false;
+        // 時間差で軸リセットを呼ぶ
         setTimeout(this.parent.resetAxis.bind(this.parent), 300);
     };
 
     // cluster ================================================================
     function Cluster(axis, index, out, min, max, color){
-        this.parentAxis = axis; // 自分自身が所属する軸
+        this.parentAxis = axis; // 自分自身が所属する軸インスタンス
         this.index = index;     // 自分自身のインデックス
         this.out = out;         // 自分からの出力（配列で、全て足して1
         this.min = min;         // 自分自身の最小値
@@ -611,6 +644,7 @@
         this.color = color;     // 色
         return this;
     }
+    // 正規化された、クラスタの縦方向の位置の上辺と下辺
     Cluster.prototype.getNomalizeRange = function(){
         // vertical normalize range
         var i = this.parentAxis.max - this.parentAxis.min;
@@ -621,13 +655,16 @@
     };
 
     // util ===================================================================
+    // ゼロ埋め
     function zeroPadding(n, c){
         return (new Array(c + 1).join('0') + n).slice(-c);
     }
+    // 指定桁数での round
     function formatFloat(number, n) {
         var p = Math.pow(10, n);
         return Math.round(number * p) / p;
     }
+    // bezier curve
     function bezier(t, p0, p1, p2, p3){
         var x = (1 - t) * (1 - t) * (1 - t) * p0[0] +
                 3 * (1 - t) * (1 - t) * t * p1[0] +
@@ -639,6 +676,7 @@
                 t * t * t * p3[1];
         return [x, y];
     }
+    // gaussian func
     function gauss(length, power){
         var i, r, t, w;
         var weight = [];
@@ -655,8 +693,7 @@
         }
         return weight;
     }
-
-    // temp
+    // json ロードするやーつ
     function loadJSON(url, callback){
         var xml = new XMLHttpRequest();
         xml.open('GET', url, true);
