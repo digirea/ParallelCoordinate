@@ -236,13 +236,16 @@
             var i, j, k, l, m, n;
             dest = [];
             if(data === null || data === undefined || data === ''){return;}
-            temp = data.split('\n');
+            temp = data.replace(/ *\n/g, '\n');
+            temp = temp.replace(/,\n/g, '\n');
+            temp = temp.replace(/,\r\n/g, '\n');
+            temp = temp.split('\n');
             if(temp === null || temp === undefined || !temp.length || temp.length < 3){return;}
             header = temp[0].split(',');
             k = true;
             dataparam = [];
             for(i = 0, j = header.length; i < j; ++i){
-                k = k && (header[i].match(/^(-\d|\.)+$/));
+                k = k && (header[i].match(/^(-|\d|\.)+$/));
                 if(!k){break;}
             }
             if(!k){ // use header strings
@@ -271,7 +274,7 @@
                     for(l = 0; l < rowcell.length; ++l){
                         n = parseFloat(rowcell[l]);
                         if(isNaN(n)){n = 0.0;}
-                        dest[m][i] = n;
+                        dest[i][l] = n;
                         dataparam[l].min = Math.min(dataparam[l].min, n);
                         dataparam[l].max = Math.max(dataparam[l].max, n);
                     }
