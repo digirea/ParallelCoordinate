@@ -4,8 +4,6 @@
 
     var NS_SVG = 'http://www.w3.org/2000/svg';
     var NS = function(e){return document.createElementNS(NS_SVG, e);};
-    var sph = new SPHLoader();
-    var issph = null;
 
     var PARALLEL_PADDING = 100;    // 対象描画エリアのパディング
     var SVG_DEFAULT_WIDTH = 30;    // 軸周辺の矩形のデフォルト幅
@@ -551,7 +549,7 @@
         for(i = this.min; i <= smax; i += scale){
             text = NS('text');
             text.style.fontSize = SVG_SCALE_SIZE;
-            text.textContent = '' + formatFloat(i, 5);
+            text.textContent = '' + this.formatFloat(i, 5);
             this.svg.appendChild(text);
             bbox = text.getBBox();
             j = bbox.width - (SVG_DEFAULT_WIDTH / 2) + AXIS_SCALE_WIDTH + 2;
@@ -633,6 +631,10 @@
         // 時間差で軸リセットを呼ぶ
         setTimeout(this.parent.resetAxis.bind(this.parent), 300);
     };
+    Axis.prototype.formatFloat = function(number, n){
+        var p = Math.pow(10, n);
+        return Math.round(number * p) / p;
+    };
 
     // cluster ================================================================
     function Cluster(axis, index, out, min, max, color){
@@ -655,44 +657,6 @@
     };
 
     // util ===================================================================
-    // ゼロ埋め
-    function zeroPadding(n, c){
-        return (new Array(c + 1).join('0') + n).slice(-c);
-    }
-    // 指定桁数での round
-    function formatFloat(number, n) {
-        var p = Math.pow(10, n);
-        return Math.round(number * p) / p;
-    }
-    // bezier curve
-    function bezier(t, p0, p1, p2, p3){
-        var x = (1 - t) * (1 - t) * (1 - t) * p0[0] +
-                3 * (1 - t) * (1 - t) * t * p1[0] +
-                3 * (1 - t) * t * t * p2[0] +
-                t * t * t * p3[0];
-        var y = (1 - t) * (1 - t) * (1 - t) * p0[1] +
-                3 * (1 - t) * (1 - t) * t * p1[1] +
-                3 * (1 - t) * t * t * p2[1] +
-                t * t * t * p3[1];
-        return [x, y];
-    }
-    // gaussian func
-    function gauss(length, power){
-        var i, r, t, w;
-        var weight = [];
-        t = 0.0;
-        for(i = 0; i < length; i++){
-            r = 1.0 + 2.0 * i;
-            w = Math.exp(-0.5 * (r * r) / power);
-            weight[i] = w;
-            if(i > 0){w *= 2.0;}
-            t += w;
-        }
-        for(i = 0; i < weight.length; i++){
-            weight[i] /= t;
-        }
-        return weight;
-    }
     // json ロードするやーつ
     function loadJSON(url, callback){
         var xml = new XMLHttpRequest();
@@ -701,65 +665,6 @@
             callback(xml.responseText);
         };
         xml.send();
-    }
-
-    // sph ====================================================================
-    // SPH は複数許可、CSV なら単体ファイルしか受け付けない
-    // SPH の場合は包含する component の要素数を考慮して合計値が複数になれば描画
-    function fileUpload(evt){
-        reset();
-        if(!evt.target.files && evt.target.files.length < 1){return;}
-        var i;
-        var fileLength = evt.target.files.length;
-        var flg = [], files = [], fileNames = [], reader = [];
-        data = [];
-        params = [];
-        targetData = null;
-        dimensionTitles = {};
-        colcount = 0;
-        for(i = 0; i < fileLength; ++i){
-            files[i] = evt.target.files[i];
-            fileNames[i] = files[i].name;
-            reader[i] = new FileReader();
-            reader[i].onload = (function(index){
-                return function(eve){
-                    data[index] = eve.target.result;
-                    flg[index] = sph.isBinary(data[index]);
-                    if(flg[index]){
-                        reader[index].onload = (function(index){
-                            return function(eve){
-                                var j, f;
-                                data[index] = eve.target.result;
-                                params[index] = sph.isSPH(data[index]);
-                                params[index].name = fileNames[index];
-                                colcount += params[index].component;
-                                if(params[index]){
-                                    f = true;
-                                    // load complete check
-                                    for(j = 0; j < fileLength; ++j){
-                                        f = f && (data[j] !== null && data[j] !== undefined && typeof data[j] === 'object');
-                                    }
-                                    if(f){
-                                        issph = true;
-                                        begin();
-                                    }
-                                }else{
-                                    infoArea('warn', 'csv file be single');
-                                    return;
-                                }
-                            };
-                        })(index);
-                        reader[index].readAsArrayBuffer(files[index]);
-                    }else{
-                        if(index === 0){
-                            issph = false;
-                            begin();
-                        }
-                    }
-                };
-            })(i);
-            reader[i].readAsBinaryString(files[i]);
-        }
     }
 })(this);
 
