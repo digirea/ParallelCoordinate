@@ -542,30 +542,30 @@ Axis.prototype.update = function(titleString, minmax){
 // つまり、最小値も最大値も、きれいに軸の両端にぴったりと配置される
 Axis.prototype.drawScale = function(){
     var i, j, k, l;
-    var text, path, bbox;
+    var text, path, bbox, dummy;
     var smin, smax;
     var range = this.max - this.min;
     var scale = range / 10;
-    // if(this.min % scale === 0){
-        smin = this.min;
-    // }else{
-    //     smin = this.min + scale - (this.min % scale);
-    // }
-    // if(this.max % scale === 0){
-        smax = this.max;
-    // }else{
-    //     smax = this.max + (this.max % scale);
-    // }
+    smin = this.min;
+    smax = this.max;
     l = this.svg.clientHeight - this.parent.SVG_TEXT_BASELINE;
+    dummy = this.parent.NS('text');
+    dummy.style.position = 'relative';
+    dummy.style.fontSize = this.parent.SVG_SCALE_SIZE;
+    dummy.style.visibility = 'hidden';
+    this.svg.appendChild(dummy);
     for(i = this.min; i <= smax; i += scale){
         text = this.parent.NS('text');
+        text.style.position = 'relative';
+        text.style.overflow = 'visible';
         text.style.fontSize = this.parent.SVG_SCALE_SIZE;
         text.textContent = '' + this.formatFloat(i, 5);
-        this.svg.appendChild(text);
-        bbox = text.getBBox();
+        dummy.textContent = '' + this.formatFloat(i, 5);
+        bbox = dummy.getBBox();
         j = bbox.width - (this.parent.SVG_DEFAULT_WIDTH / 2) + this.parent.AXIS_SCALE_WIDTH + 2;
         k = this.svg.clientHeight - ((i - this.min) / (smax - this.min)) * l;
         text.style.transform = 'translate(' + -j + 'px, ' + (k + 5) + 'px)';
+        this.svg.appendChild(text);
         path = this.parent.NS('path');
         path.setAttribute('stroke', this.parent.AXIS_LINE_COLOR);
         path.setAttribute('stroke-width', this.parent.AXIS_LINE_WIDTH);

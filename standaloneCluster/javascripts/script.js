@@ -44,24 +44,25 @@
         }
 
         // parallel initialize
-        parallel = new ParallelCoordinate(document.getElementById('wrap'), {
-            padding: 100,
-            svg: {
-                defaultwidth: 30,
-                textbaseline: 200,
-                textsize: '32px',
-                scalesize: '20px'
-            },
-            axis: {
-                linewidth: 5,
-                linecolor: 'crimson',
-                scalewidth: 1
-            },
-            bezier: {
-                division: 30,
-                linescale: 20
-            }
-        });
+        parallel = new ParallelCoordinate(document.getElementById('wrap'));
+        // parallel = new ParallelCoordinate(document.getElementById('wrap'), {
+        //     padding: 100,
+        //     svg: {
+        //         defaultwidth: 30,
+        //         textbaseline: 200,
+        //         textsize: '32px',
+        //         scalesize: '20px'
+        //     },
+        //     axis: {
+        //         linewidth: 5,
+        //         linecolor: 'crimson',
+        //         scalewidth: 1
+        //     },
+        //     bezier: {
+        //         division: 30,
+        //         linescale: 20
+        //     }
+        // });
 
         // axis initialize
         for(i = 0, j = json.axis.length; i < j; ++i){
