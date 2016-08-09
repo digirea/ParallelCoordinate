@@ -28,6 +28,7 @@ SPHLoader.prototype.isSPH = function(data){
         'jmax',
         'kmax',
         'len',
+        'len',
         'xorg',
         'yorg',
         'zorg',
@@ -40,6 +41,7 @@ SPHLoader.prototype.isSPH = function(data){
         'len',
         'step',
         'time',
+        'len',
         'len'
     ];
     k = {};
