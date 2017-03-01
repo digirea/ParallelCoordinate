@@ -32,6 +32,10 @@
         var dimensionTitles = {};
         var data = [], params = [];
 
+        var bottomArea = document.getElementById("ui_layer").getBoundingClientRect();
+        canvasAreaWidth = Math.max(800, document.body.clientWidth - 150);
+        canvasAreaHeight = Math.max(500, document.body.clientHeight - (bottomArea.bottom - bottomArea.top) - 100);
+
         var densityCheck = document.getElementById('density');
         densityCheck.addEventListener('change', redraw, false);
         var densityNormal = document.getElementById('densityNormal');
@@ -55,8 +59,8 @@
         function windowResize(eve){
             var tw = window.innerWidth;
             var th = window.innerHeight;
-            canvasAreaWidth = Math.min(canvasAreaWidth, tw * 0.85);
-            canvasAreaHeight = Math.min(canvasAreaHeight, th * 0.7);
+            //canvasAreaWidth = Math.min(canvasAreaWidth, tw * 0.85);
+            //canvasAreaHeight = Math.min(canvasAreaHeight, th * 0.7);
         }
 
         document.getElementById('dimx').addEventListener('blur', dimUpdate, false);
