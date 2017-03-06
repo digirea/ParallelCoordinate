@@ -553,6 +553,7 @@
             var darkAlpha = 0.5;
 
             if(target.match(/foreground/)){
+                // brush の選択状態が解除されたように見えてしまうので非表示化しないようにする
                 // glContext['glbrush'].gl.viewport(0, 0, width, height);
                 // glContext['glbrush'].gl.clearColor(0.0, 0.0, 0.0, 0.0);
                 // glContext['glbrush'].gl.clear(glContext['glbrush'].gl.COLOR_BUFFER_BIT);
@@ -561,9 +562,6 @@
                     glContext['glbrush'].gl.viewport(0, 0, width, height);
                     glContext['glbrush'].gl.clearColor(0.0, 0.0, 0.0, 0.0);
                     glContext['glbrush'].gl.clear(glContext['glbrush'].gl.COLOR_BUFFER_BIT);
-                }else{
-                    darkness = true;
-                    console.log('datalength: ', data.length);
                 }
             }
 
