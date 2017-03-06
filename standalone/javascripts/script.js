@@ -553,14 +553,17 @@
             var darkAlpha = 0.5;
 
             if(target.match(/foreground/)){
-                glContext['glbrush'].gl.viewport(0, 0, width, height);
-                glContext['glbrush'].gl.clearColor(0.0, 0.0, 0.0, 0.0);
-                glContext['glbrush'].gl.clear(glContext['glbrush'].gl.COLOR_BUFFER_BIT);
+                // glContext['glbrush'].gl.viewport(0, 0, width, height);
+                // glContext['glbrush'].gl.clearColor(0.0, 0.0, 0.0, 0.0);
+                // glContext['glbrush'].gl.clear(glContext['glbrush'].gl.COLOR_BUFFER_BIT);
             }else{
                 if(data == null){
                     glContext['glbrush'].gl.viewport(0, 0, width, height);
                     glContext['glbrush'].gl.clearColor(0.0, 0.0, 0.0, 0.0);
                     glContext['glbrush'].gl.clear(glContext['glbrush'].gl.COLOR_BUFFER_BIT);
+                }else{
+                    darkness = true;
+                    console.log('datalength: ', data.length);
                 }
             }
 
