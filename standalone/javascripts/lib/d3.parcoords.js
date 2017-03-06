@@ -409,7 +409,7 @@ d3.parcoords = function(config) {
             f = true;
             for(l = 0; l < k; ++l){
                 e = v[i][d[l]];
-                f = f && (e >= config.usr.param[l].min && e <= config.usr.param[l].max);
+                f = f && (e >= config.usr.param[d[l]].min && e <= config.usr.param[d[l]].max);
             }
             if(f){
                 for(l = 0; l < k; ++l){
