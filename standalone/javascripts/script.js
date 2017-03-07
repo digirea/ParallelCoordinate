@@ -44,10 +44,21 @@
         var fileInput = document.getElementById('file');
         fileInput.addEventListener('change', fileUpload, false);
         var logScale = document.getElementById('logScale');
-        logScale.addEventListener('change', function(){if(prev.prevType != null){
-            reset();
-            useAxes();
-        }}, false);
+        logScale.addEventListener('change', function(){
+            if(prev.prevType != null){
+                if(dataparam && Object.prototype.toString.call(dataparam) === '[object Array]' && dataparam.length > 0 && logScale.checked){
+                    var f = false;
+                    for(var i = 0, j = dataparam.length; i < j; ++i){
+                        f = f || dataparam[i].min <= 0.0;
+                    }
+                    if(f){
+                        alert('データにゼロまたは負数が含まれています。\nlog scale モードではゼロや負数はデータが非表示または喪失することがあります。');
+                    }
+                }
+                reset();
+                useAxes();
+            }
+        }, false);
 
         new ColorMap(document.getElementById('pickercanvas'), function(e){
             colormap = e;
