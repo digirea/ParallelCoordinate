@@ -1,24 +1,24 @@
 html {
-    width : 100%;
-    height : 100%;
+    width: 100%;
+    height: 100%;
 }
 
 body {
-    width : 100%;
-    height : 100%;
-  padding: 0px;
-  margin : 0px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    width: 100%;
+    height: 100%;
+    padding: 0px;
+    margin: 0px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
 a {
-  color: #00B7FF;
+    color: #00B7FF;
 }
 
 #wrap {
     display: flex;
     flex-direction: row;
-  padding: 30px;
+    padding: 30px;
 }
 
 #container {

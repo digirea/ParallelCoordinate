@@ -70,8 +70,14 @@
         function windowResize(eve){
             var tw = window.innerWidth;
             var th = window.innerHeight;
-            //canvasAreaWidth = Math.min(canvasAreaWidth, tw * 0.85);
-            //canvasAreaHeight = Math.min(canvasAreaHeight, th * 0.7);
+            var bottomArea = document.getElementById("ui_layer").getBoundingClientRect();
+            canvasAreaWidth = Math.max(800, document.body.clientWidth - 150);
+            canvasAreaHeight = Math.max(500, document.body.clientHeight - (bottomArea.bottom - bottomArea.top) - 100);
+            if(parcoords != null){
+                parcoords.width(canvasAreaWidth).height(canvasAreaHeight);
+                reset();
+                useAxes();
+            }
         }
 
         document.getElementById('dimx').addEventListener('blur', dimUpdate, false);
