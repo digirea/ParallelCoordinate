@@ -783,8 +783,39 @@
                 lines = linecount * (101 - densityRange) / 100 * 0.5;
             }
             if(density){
+                // // first scene to vertical buffer
+                // gl.bindFramebuffer(gl.FRAMEBUFFER, gc.plp.verticalBuffer.framebuffer);
+                // gl.viewport(0, 0, gc.plp.bufferWidth, gc.plp.bufferHeight);
+                // gl.clearColor(0.0, 0.0, 0.0, 0.0);
+                // gl.clear(gl.COLOR_BUFFER_BIT);
+                // set_attribute(gl, vboL, gc.pl.attL, gc.pl.attS);
+                // gl.uniformMatrix4fv(gc.pl.uniL.matrix, false, vpMatrix);
+                // gl.uniform4fv(gc.pl.uniL.color, gc.color);
+                // gl.uniform1f(gc.pl.uniL.density, lines);
+                // gl.drawArrays(gl.LINES, 0, data.length / 2);
+                //
+                // // horizon blur
+                // gl.bindFramebuffer(gl.FRAMEBUFFER, gc.plp.horizonBuffer.framebuffer);
+                // gl.bindTexture(gl.TEXTURE_2D, gc.plp.verticalBuffer.texture);
+                // gl.viewport(0, 0, gc.plp.bufferWidth, gc.plp.bufferHeight);
+                // gl.clear(gl.COLOR_BUFFER_BIT);
+                // gl.useProgram(gc.plp.prg);
+                // set_attribute(gl, vboPL, gc.plp.attL, gc.plp.attS);
+                // gl.uniform2fv(gc.plp.uniL.resolution, [gc.plp.bufferWidth, gc.plp.bufferHeight]);
+                // gl.uniform1i(gc.plp.uniL.horizontal, true);
+                // gl.uniform1fv(gc.plp.uniL.weight, weight);
+                // gl.uniform1i(gc.plp.uniL.texture, 0);
+                // gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                //
+                // // vertical blur
+                // gl.bindFramebuffer(gl.FRAMEBUFFER, gc.plp.verticalBuffer.framebuffer);
+                // gl.bindTexture(gl.TEXTURE_2D, gc.plp.horizonBuffer.texture);
+                // gl.clear(gl.COLOR_BUFFER_BIT);
+                // gl.uniform1i(gc.plp.uniL.horizontal, false);
+                // gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
                 // first scene to vertical buffer
-                gl.bindFramebuffer(gl.FRAMEBUFFER, gc.plp.verticalBuffer.framebuffer);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, gc.plp.horizonBuffer.framebuffer);
                 gl.viewport(0, 0, gc.plp.bufferWidth, gc.plp.bufferHeight);
                 gl.clearColor(0.0, 0.0, 0.0, 0.0);
                 gl.clear(gl.COLOR_BUFFER_BIT);
@@ -794,24 +825,17 @@
                 gl.uniform1f(gc.pl.uniL.density, lines);
                 gl.drawArrays(gl.LINES, 0, data.length / 2);
 
-                // horizon blur
-                gl.bindFramebuffer(gl.FRAMEBUFFER, gc.plp.horizonBuffer.framebuffer);
-                gl.bindTexture(gl.TEXTURE_2D, gc.plp.verticalBuffer.texture);
+                // vertical blur
+                gl.bindFramebuffer(gl.FRAMEBUFFER, gc.plp.verticalBuffer.framebuffer);
+                gl.bindTexture(gl.TEXTURE_2D, gc.plp.horizonBuffer.texture);
                 gl.viewport(0, 0, gc.plp.bufferWidth, gc.plp.bufferHeight);
                 gl.clear(gl.COLOR_BUFFER_BIT);
                 gl.useProgram(gc.plp.prg);
                 set_attribute(gl, vboPL, gc.plp.attL, gc.plp.attS);
                 gl.uniform2fv(gc.plp.uniL.resolution, [gc.plp.bufferWidth, gc.plp.bufferHeight]);
-                gl.uniform1i(gc.plp.uniL.horizontal, true);
+                gl.uniform1i(gc.plp.uniL.horizontal, false);
                 gl.uniform1fv(gc.plp.uniL.weight, weight);
                 gl.uniform1i(gc.plp.uniL.texture, 0);
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-                // vertical blur
-                gl.bindFramebuffer(gl.FRAMEBUFFER, gc.plp.verticalBuffer.framebuffer);
-                gl.bindTexture(gl.TEXTURE_2D, gc.plp.horizonBuffer.texture);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.uniform1i(gc.plp.uniL.horizontal, false);
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
                 // final scene
